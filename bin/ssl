@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+
+echo 'Configuring local SSL certificates...'
+if [[ ! -f config/certs/localhost-key.pem ]] && [[ ! -f config/certs/localhost.pem ]]
+then
+    mkcert -install
+    mkcert -key-file config/certs/localhost-key.pem -cert-file config/certs/localhost.pem localhost ciderbot.local.gd
+fi

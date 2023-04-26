@@ -1,12 +1,10 @@
 package main
 
 import (
+	"crypto/rand"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
-	"log"
-	"net/http"
-	"os"
-
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-contrib/sessions/cookie"
 	"github.com/gin-gonic/gin"
@@ -16,6 +14,9 @@ import (
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
+	"log"
+	"net/http"
+	"os"
 )
 
 const (
@@ -23,14 +24,18 @@ const (
 )
 
 var (
-	sessionName   string
-	dbName        string
-	clientID      string
-	clientSecret  string
-	redirectURL   string
-	sessionSecret string
-	db            *gorm.DB
-	oauthConf     *oauth2.Config
+	sessionName       string
+	dbName            string
+	clientID          string
+	clientSecret      string
+	redirectURL       string
+	sessionSecret     string
+	db                *gorm.DB
+	googleOAuthConf   *oauth2.Config
+	slackOAuthConf    *oauth2.Config
+	slackClientID     string
+	slackClientSecret string
+	slackRedirectURI  string
 )
 
 type User struct {
@@ -39,6 +44,7 @@ type User struct {
 	Provider   string
 	Name       string
 	AvatarURL  string
+	APIKey     string
 }
 
 func initEnv() {
@@ -52,8 +58,11 @@ func initEnv() {
 	dbName = os.Getenv("DB_NAME")
 	clientID = os.Getenv("GOOGLE_CLIENT_ID")
 	clientSecret = os.Getenv("GOOGLE_CLIENT_SECRET")
-	redirectURL = os.Getenv("AUTH_REDIRECT_URL")
+	redirectURL = os.Getenv("GOOGLE_REDIRECT_URL")
 	sessionSecret = os.Getenv("SECRET_SESSION_KEY")
+	slackClientID = os.Getenv("SLACK_CLIENT_ID")
+	slackClientSecret = os.Getenv("SLACK_CLIENT_SECRET")
+	slackRedirectURI = os.Getenv("SLACK_REDIRECT_URL")
 }
 
 // TODO: do we need to close the DB "conn"?
@@ -69,8 +78,8 @@ func initDB(name string) *gorm.DB {
 	return db
 }
 
-func initOAuthConf() *oauth2.Config {
-	return &oauth2.Config{
+func initGoogleOAuthConf() {
+	googleOAuthConf = &oauth2.Config{
 		ClientID:     clientID,
 		ClientSecret: clientSecret,
 		RedirectURL:  redirectURL,
@@ -82,7 +91,20 @@ func initOAuthConf() *oauth2.Config {
 	}
 }
 
-func initServer(db *gorm.DB, oauthConf *oauth2.Config) {
+func initSlackOAuthConf() {
+	slackOAuthConf = &oauth2.Config{
+		ClientID:     slackClientID,
+		ClientSecret: slackClientSecret,
+		Endpoint: oauth2.Endpoint{
+			AuthURL:  "https://slack.com/oauth/v2/authorize",
+			TokenURL: "https://slack.com/api/oauth.v2.access",
+		},
+		RedirectURL: slackRedirectURI,
+		Scopes:      []string{"chat:write", "chat:write.customize", "commands"},
+	}
+}
+
+func initServer(db *gorm.DB) {
 	r := gin.Default()
 
 	// Set up sessions middleware
@@ -90,9 +112,11 @@ func initServer(db *gorm.DB, oauthConf *oauth2.Config) {
 	r.Use(sessions.Sessions(sessionName, store))
 
 	// Set up routes
-	r.GET("/", handleHome(db, oauthConf))
-	r.GET("/auth/google/callback", handleGoogleCallback(db, oauthConf))
+	r.GET("/", handleHome(db))
 	r.GET("/logout", handleLogout())
+	r.GET("/auth/google/callback", handleGoogleCallback(db))
+	r.GET("/auth/slack/start", handleSlackAuth())
+	r.GET("/auth/slack/callback", handleSlackAuthCallback())
 
 	// Serve the static files
 	r.Static("/static", "./static")
@@ -101,18 +125,42 @@ func initServer(db *gorm.DB, oauthConf *oauth2.Config) {
 	r.LoadHTMLGlob("templates/*")
 
 	// Start the server
-	err := r.Run(":8080")
+	err := r.RunTLS(":8080", "./config/certs/localhost.pem", "./config/certs/localhost-key.pem")
 	if err != nil {
 		fmt.Println(err)
 	}
 }
 
-func handleHome(db *gorm.DB, oauthConf *oauth2.Config) gin.HandlerFunc {
+func handleSlackAuth() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		authURL := slackOAuthConf.AuthCodeURL("state-token", oauth2.AccessTypeOffline)
+		c.Redirect(http.StatusTemporaryRedirect, authURL)
+	}
+}
+
+func handleSlackAuthCallback() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		code := c.Query("code")
+
+		token, err := slackOAuthConf.Exchange(c, code)
+		if err != nil {
+			log.Println(err)
+			c.AbortWithError(http.StatusInternalServerError, err)
+			return
+		}
+
+		log.Println("Access token:", token.AccessToken)
+		c.Redirect(http.StatusFound, "/")
+		// Save the access token to your database or use it to make API calls to the user's workspace.
+	}
+}
+
+func handleHome(db *gorm.DB) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		// Check if the user is authorized
 		if !isUserSessionAuthorized(c) {
 			// If not, redirect to the login page
-			authURL := oauthConf.AuthCodeURL("state")
+			authURL := googleOAuthConf.AuthCodeURL("state")
 			c.Redirect(http.StatusFound, authURL)
 			return
 		}
@@ -123,20 +171,20 @@ func handleHome(db *gorm.DB, oauthConf *oauth2.Config) gin.HandlerFunc {
 	}
 }
 
-func handleGoogleCallback(db *gorm.DB, oauthConf *oauth2.Config) gin.HandlerFunc {
+func handleGoogleCallback(db *gorm.DB) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		// Get the authorization code from the query parameters
 		code := c.Query("code")
 
 		// Exchange the authorization code for a token
-		token, err := oauthConf.Exchange(c, code)
+		token, err := googleOAuthConf.Exchange(c, code)
 		if err != nil {
 			c.AbortWithError(http.StatusBadRequest, err)
 			return
 		}
 
 		// Get the user's profile from the Google API
-		client := oauthConf.Client(c, token)
+		client := googleOAuthConf.Client(c, token)
 		resp, err := client.Get("https://www.googleapis.com/oauth2/v2/userinfo")
 		if err != nil {
 			c.AbortWithError(http.StatusBadRequest, err)
@@ -163,6 +211,7 @@ func handleGoogleCallback(db *gorm.DB, oauthConf *oauth2.Config) gin.HandlerFunc
 			Email:      profile.Email,
 			Name:       profile.Name,
 			AvatarURL:  profile.AvatarURL,
+			APIKey:     generateAPIKey(),
 		}
 
 		result := db.Clauses(clause.OnConflict{
@@ -202,7 +251,9 @@ func handleLogout() gin.HandlerFunc {
 
 func main() {
 	initEnv()
-	initServer(initDB(dbName), initOAuthConf())
+	initSlackOAuthConf()
+	initGoogleOAuthConf()
+	initServer(initDB(dbName))
 }
 
 func isUserSessionAuthorized(c *gin.Context) bool {
