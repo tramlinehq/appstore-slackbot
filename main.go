@@ -3,11 +3,14 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"log"
 	"net/http"
+	"os"
 
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-contrib/sessions/cookie"
 	"github.com/gin-gonic/gin"
+	"github.com/joho/godotenv"
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/google"
 	"gorm.io/driver/sqlite"
@@ -16,18 +19,18 @@ import (
 )
 
 const (
-	dbName         = "db.db"
-	clientID       = "946207521855-fgkqq6p31mg5t5ql2tqe48knskhk5a2f.apps.googleusercontent.com"
-	clientSecret   = "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"
-	redirectURL    = "https://ciderbot.onrender.com/auth/google/callback"
-	sessionName    = "ciderbot"
-	sessionSecret  = "SESSION_SECRET_KEY"
-	authorizedUser = "AUTHORIZED_USER_EMAIL"
+	authorizedUserKey = "AUTHORIZED_USER_EMAIL"
 )
 
 var (
-	db        *gorm.DB
-	oauthConf *oauth2.Config
+	sessionName   string
+	dbName        string
+	clientID      string
+	clientSecret  string
+	redirectURL   string
+	sessionSecret string
+	db            *gorm.DB
+	oauthConf     *oauth2.Config
 )
 
 type User struct {
@@ -38,13 +41,36 @@ type User struct {
 	AvatarURL  string
 }
 
-func main() {
-	// Initialize the database
-	db = initDB(dbName)
-	// defer db.Close()
+func initEnv() {
+	e := godotenv.Load()
 
-	// Initialize the OAuth configuration
-	oauthConf = &oauth2.Config{
+	if e != nil {
+		log.Fatalf("Error loading .env file: %s", e)
+	}
+
+	sessionName = os.Getenv("APP_NAME")
+	dbName = os.Getenv("DB_NAME")
+	clientID = os.Getenv("GOOGLE_CLIENT_ID")
+	clientSecret = os.Getenv("GOOGLE_CLIENT_SECRET")
+	redirectURL = os.Getenv("AUTH_REDIRECT_URL")
+	sessionSecret = os.Getenv("SECRET_SESSION_KEY")
+}
+
+// TODO: do we need to close the DB "conn"?
+func initDB(name string) *gorm.DB {
+	var err error
+	db, err = gorm.Open(sqlite.Open(name), &gorm.Config{})
+	if err != nil {
+		panic(err)
+	}
+
+	db.AutoMigrate(&User{})
+
+	return db
+}
+
+func initOAuthConf() *oauth2.Config {
+	return &oauth2.Config{
 		ClientID:     clientID,
 		ClientSecret: clientSecret,
 		RedirectURL:  redirectURL,
@@ -54,8 +80,9 @@ func main() {
 		},
 		Endpoint: google.Endpoint,
 	}
+}
 
-	// Initialize the Gin router
+func initServer(db *gorm.DB, oauthConf *oauth2.Config) {
 	r := gin.Default()
 
 	// Set up sessions middleware
@@ -63,9 +90,27 @@ func main() {
 	r.Use(sessions.Sessions(sessionName, store))
 
 	// Set up routes
-	r.GET("/", func(c *gin.Context) {
+	r.GET("/", handleHome(db, oauthConf))
+	r.GET("/auth/google/callback", handleGoogleCallback(db, oauthConf))
+	r.GET("/logout", handleLogout())
+
+	// Serve the static files
+	r.Static("/static", "./static")
+
+	// Load the HTML templates
+	r.LoadHTMLGlob("templates/*")
+
+	// Start the server
+	err := r.Run(":8080")
+	if err != nil {
+		fmt.Println(err)
+	}
+}
+
+func handleHome(db *gorm.DB, oauthConf *oauth2.Config) gin.HandlerFunc {
+	return func(c *gin.Context) {
 		// Check if the user is authorized
-		if !isAuthorized(c) {
+		if !isUserSessionAuthorized(c) {
 			// If not, redirect to the login page
 			authURL := oauthConf.AuthCodeURL("state")
 			c.Redirect(http.StatusFound, authURL)
@@ -73,11 +118,13 @@ func main() {
 		}
 
 		// If authorized, display the user's name and avatar
-		user := getUser(c)
+		user := getUserFromDB(c)
 		c.HTML(http.StatusOK, "dashboard.html", gin.H{"user": user})
-	})
+	}
+}
 
-	r.GET("/auth/google/callback", func(c *gin.Context) {
+func handleGoogleCallback(db *gorm.DB, oauthConf *oauth2.Config) gin.HandlerFunc {
+	return func(c *gin.Context) {
 		// Get the authorization code from the query parameters
 		code := c.Query("code")
 
@@ -133,66 +180,49 @@ func main() {
 
 		// Set the authorized user in the session
 		session := sessions.Default(c)
-		session.Set(authorizedUser, profile.Email)
+		session.Set(authorizedUserKey, profile.Email)
 		session.Save()
 
 		// Redirect back to the home page
 		c.Redirect(http.StatusFound, "/")
-	})
+	}
+}
 
-	r.GET("/logout", func(c *gin.Context) {
+func handleLogout() gin.HandlerFunc {
+	return func(c *gin.Context) {
 		// Clear the authorized user from the session
 		session := sessions.Default(c)
-		session.Delete(authorizedUser)
+		session.Delete(authorizedUserKey)
 		session.Save()
 
 		// Redirect back to the home page
 		c.Redirect(http.StatusFound, "/")
-	})
-
-	// Serve the static files
-	r.Static("/static", "./static")
-
-	// Load the HTML templates
-	r.LoadHTMLGlob("templates/*")
-
-	// Start the server
-	err := r.Run(":8080")
-	if err != nil {
-		fmt.Println(err)
 	}
 }
 
-func initDB(name string) *gorm.DB {
-	db, err := gorm.Open(sqlite.Open(name), &gorm.Config{})
-	if err != nil {
-		panic(err)
-	}
-
-	db.AutoMigrate(&User{})
-
-	return db
+func main() {
+	initEnv()
+	initServer(initDB(dbName), initOAuthConf())
 }
 
-func isAuthorized(c *gin.Context) bool {
+func isUserSessionAuthorized(c *gin.Context) bool {
 	session := sessions.Default(c)
-	email := session.Get(authorizedUser)
+	email := session.Get(authorizedUserKey)
 
 	return email != nil
 }
 
-func getUser(c *gin.Context) *User {
-	email := getEmail(c)
-
+func getUserFromDB(c *gin.Context) *User {
+	email := getEmailFromSession(c)
 	var user User
 	db.Where("email = ?", email).First(&user)
 
 	return &user
 }
 
-func getEmail(c *gin.Context) string {
+func getEmailFromSession(c *gin.Context) string {
 	session := sessions.Default(c)
-	email := session.Get(authorizedUser)
+	email := session.Get(authorizedUserKey)
 
 	if email == nil {
 		return ""
