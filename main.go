@@ -1,206 +1,202 @@
 package main
 
 import (
-	"github.com/gofiber/fiber/v2"
-	"github.com/gofiber/fiber/v2/middleware/session"
-	"github.com/gofiber/fiber/v2/middleware/logger"
-	"github.com/gofiber/template/html"
-	"github.com/joho/godotenv"
-	"github.com/markbates/goth"
-	"github.com/markbates/goth/providers/google"
-	"github.com/shareed2k/goth_fiber"
+	"encoding/json"
+	"fmt"
+	"net/http"
+
+	"github.com/gin-contrib/sessions"
+	"github.com/gin-contrib/sessions/cookie"
+	"github.com/gin-gonic/gin"
+	"golang.org/x/oauth2"
+	"golang.org/x/oauth2/google"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
-	"log"
-	"os"
-	//"fmt"
+	"gorm.io/gorm/clause"
+)
+
+const (
+	dbName         = "db.db"
+	clientID       = "946207521855-fgkqq6p31mg5t5ql2tqe48knskhk5a2f.apps.googleusercontent.com"
+	clientSecret   = "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"
+	redirectURL    = "http://localhost:8080/auth/google/callback"
+	sessionName    = "ciderbot"
+	sessionSecret  = "SESSION_SECRET_KEY"
+	authorizedUser = "AUTHORIZED_USER_EMAIL"
 )
 
 var (
-	clientID     string
-	clientSecret string
-	db           *gorm.DB
-	tpl          = html.New("./templates/", ".html")
-	app          *fiber
+	db        *gorm.DB
+	oauthConf *oauth2.Config
 )
 
-// CREATE TABLE IF NOT EXISTS users (
-//
-//	    id INTEGER PRIMARY KEY,
-//	    provider TEXT NOT NULL,
-//	    provider_id TEXT NOT NULL UNIQUE,
-//	    name TEXT NOT NULL,
-//	    email TEXT NOT NULL UNIQUE,
-//	    avatar_url TEXT NOT NULL
-//	);
 type User struct {
-	ID         uint `gorm:"primary_key"`
+	Email      string `gorm:"primary_key"`
+	ProviderID string `gorm:"index:idx_name,unique"`
 	Provider   string
-	ProviderID string
-	Email      string
 	Name       string
 	AvatarURL  string
 }
 
-func initEnv() {
-	e := godotenv.Load()
-
-	if e != nil {
-		log.Fatalf("Error loading .env file: %s", e)
-	}
-
-	clientID := os.Getenv("GOOGLE_CLIENT_ID")
-	clientSecret := os.Getenv("GOOGLE_CLIENT_SECRET")
-}
-
-func initGoth() {
-	goth.UseProviders(
-		google.New(clientID, clientSecret, "http://localhost:3000/auth/google/callback"),
-	)
-}
-
-func initFiber() {
-	app = fiber.New(fiber.Config{
-		Views: tpl,
-	})
-
-	// Initialize default config
-	app.Use(logger.New())
-}
-
-func initSession() {
-	store = session.New()
-}
-
-func initRoutes() {
-	app.Get("/", func(c *fiber.Ctx) error {
-		return c.Render("login", fiber.Map{})
-	})
-
-	app.Get("/auth/:provider", goth_fiber.BeginAuthHandler)
-
-	app.Get("/auth/google/callback", func(c *fiber.Ctx) error {
-		user, err := goth_fiber.CompleteUserAuth(c)
-		if err != nil {
-			return err
-		}
-		err = saveUser(user)
-		if err != nil {
-			return err
-		}
-
-		// Store user session
-		session, err := store.Get(c)
-		if err != nil {
-			return err
-		}
-		session.Set("userID", user.UserID)
-		err = session.Save()
-		if err != nil {
-			return err
-		}
-
-		return c.Render("dashboard", fiber.Map{
-			"user": user,
-		})
-	})
-
-	app.Get("/logout", func(c *fiber.Ctx) error {
-		// Destroy user session
-		session, err := store.Get(c)
-		if err != nil {
-			return err
-		}
-		session.Destroy()
-		err = session.Save()
-		if err != nil {
-			return err
-		}
-
-		return c.Redirect("/")
-	})
-
-	app.Get("/dashboard", func(c *fiber.Ctx) error {
-		// Retrieve user session
-		session, err := store.Get(c)
-		if err != nil {
-			return err
-		}
-		userID := session.Get("userID")
-		if userID == nil {
-			return c.Redirect("/")
-		}
-
-		// Retrieve user from database
-		user, err := getUserByProviderID("google", userID.(string))
-		if err != nil {
-			return err
-		}
-
-		return c.Render("dashboard", fiber.Map{
-			"user": user,
-		})
-	})
-}
-
-func initDB() {
-	// Connect to SQLite database
-	var err error
-	db, err = gorm.Open(sqlite.Open("db.db"), &gorm.Config{})
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	// defer db.Close()
-	db.AutoMigrate(&User{})
-}
-
-func initServer() {
-	log.Fatal(app.Listen(":3000"))
-}
-
 func main() {
-	initEnv()
-	initFiber()
-	initGoth()
-	initSession()
-	initRoutes()
-	initDB()
-	initServer()
+	// Initialize the database
+	db = initDB(dbName)
+	// defer db.Close()
+
+	// Initialize the OAuth configuration
+	oauthConf = &oauth2.Config{
+		ClientID:     clientID,
+		ClientSecret: clientSecret,
+		RedirectURL:  redirectURL,
+		Scopes: []string{
+			"https://www.googleapis.com/auth/userinfo.email",
+			"https://www.googleapis.com/auth/userinfo.profile",
+		},
+		Endpoint: google.Endpoint,
+	}
+
+	// Initialize the Gin router
+	r := gin.Default()
+
+	// Set up sessions middleware
+	store := cookie.NewStore([]byte(sessionSecret))
+	r.Use(sessions.Sessions(sessionName, store))
+
+	// Set up routes
+	r.GET("/", func(c *gin.Context) {
+		// Check if the user is authorized
+		if !isAuthorized(c) {
+			// If not, redirect to the login page
+			authURL := oauthConf.AuthCodeURL("state")
+			c.Redirect(http.StatusFound, authURL)
+			return
+		}
+
+		// If authorized, display the user's name and avatar
+		user := getUser(c)
+		c.HTML(http.StatusOK, "dashboard.html", gin.H{"user": user})
+	})
+
+	r.GET("/auth/google/callback", func(c *gin.Context) {
+		// Get the authorization code from the query parameters
+		code := c.Query("code")
+
+		// Exchange the authorization code for a token
+		token, err := oauthConf.Exchange(c, code)
+		if err != nil {
+			c.AbortWithError(http.StatusBadRequest, err)
+			return
+		}
+
+		// Get the user's profile from the Google API
+		client := oauthConf.Client(c, token)
+		resp, err := client.Get("https://www.googleapis.com/oauth2/v2/userinfo")
+		if err != nil {
+			c.AbortWithError(http.StatusBadRequest, err)
+			return
+		}
+		defer resp.Body.Close()
+
+		var profile struct {
+			ID        string `json:"id"`
+			Email     string `json:"email"`
+			Name      string `json:"name"`
+			AvatarURL string `json:"picture"`
+		}
+		err = json.NewDecoder(resp.Body).Decode(&profile)
+		if err != nil {
+			c.AbortWithError(http.StatusBadRequest, err)
+			return
+		}
+
+		// Save the authorized user to the database
+		user := User{
+			Provider:   "google",
+			ProviderID: profile.ID,
+			Email:      profile.Email,
+			Name:       profile.Name,
+			AvatarURL:  profile.AvatarURL,
+		}
+
+		result := db.Clauses(clause.OnConflict{
+			Columns: []clause.Column{{Name: "provider_id"}},
+			DoUpdates: clause.AssignmentColumns([]string{
+				"email",
+				"name",
+				"avatar_url",
+			}),
+		}).Create(&user)
+		if result.Error != nil {
+			c.AbortWithError(http.StatusInternalServerError, result.Error)
+			return
+		}
+
+		// Set the authorized user in the session
+		session := sessions.Default(c)
+		session.Set(authorizedUser, profile.Email)
+		session.Save()
+
+		// Redirect back to the home page
+		c.Redirect(http.StatusFound, "/")
+	})
+
+	r.GET("/logout", func(c *gin.Context) {
+		// Clear the authorized user from the session
+		session := sessions.Default(c)
+		session.Delete(authorizedUser)
+		session.Save()
+
+		// Redirect back to the home page
+		c.Redirect(http.StatusFound, "/")
+	})
+
+	// Serve the static files
+	r.Static("/static", "./static")
+
+	// Load the HTML templates
+	r.LoadHTMLGlob("templates/*")
+
+	// Start the server
+	err := r.Run(":8080")
+	if err != nil {
+		fmt.Println(err)
+	}
 }
 
-func saveUser(user goth.User) error {
-	var count int64
-	result := db.Model(&User{}).Where("provider = ? AND provider_id = ?", user.Provider, user.UserID).Count(&count)
-	if result.Error != nil {
-		return result.Error
+func initDB(name string) *gorm.DB {
+	db, err := gorm.Open(sqlite.Open(name), &gorm.Config{})
+	if err != nil {
+		panic(err)
 	}
 
-	newUser := User{Name: user.Name, Email: user.Email, Provider: user.Provider, ProviderID: user.UserID, AvatarURL: user.AvatarURL}
+	db.AutoMigrate(&User{})
 
-	if count == 0 {
-		result = db.Create(&newUser)
-	} else {
-		result = db.Model(&User{}).Where("provider = ? AND provider_id = ?", user.Provider, user.UserID).Updates(map[string]interface{}{
-			"name":       user.Name,
-			"email":      user.Email,
-			"avatar_url": user.AvatarURL,
-		})
-	}
-
-	if result.Error != nil {
-		return result.Error
-	}
-
-	return nil
+	return db
 }
 
-func getUserByProviderID(provider string, providerID string) (goth.User, error) {
-	var user goth.User
-	result := db.Where("provider = ? AND provider_id = ?", provider, providerID).First(&User{})
-	if result.Error != nil {
-		return user, result.Error
+func isAuthorized(c *gin.Context) bool {
+	session := sessions.Default(c)
+	email := session.Get(authorizedUser)
+
+	return email != nil
+}
+
+func getUser(c *gin.Context) *User {
+	email := getEmail(c)
+
+	var user User
+	db.Where("email = ?", email).First(&user)
+
+	return &user
+}
+
+func getEmail(c *gin.Context) string {
+	session := sessions.Default(c)
+	email := session.Get(authorizedUser)
+
+	if email == nil {
+		return ""
 	}
 
-	return user, nil
+	return email.(string)
 }
