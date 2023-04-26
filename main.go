@@ -19,7 +19,7 @@ const (
 	dbName         = "db.db"
 	clientID       = "946207521855-fgkqq6p31mg5t5ql2tqe48knskhk5a2f.apps.googleusercontent.com"
 	clientSecret   = "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"
-	redirectURL    = "http://localhost:8080/auth/google/callback"
+	redirectURL    = "https://ciderbot.onrender.com/auth/google/callback"
 	sessionName    = "ciderbot"
 	sessionSecret  = "SESSION_SECRET_KEY"
 	authorizedUser = "AUTHORIZED_USER_EMAIL"
