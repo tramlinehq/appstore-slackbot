@@ -1,8 +1,6 @@
 package main
 
 import (
-	"crypto/rand"
-	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"github.com/gin-contrib/sessions"
@@ -39,12 +37,12 @@ var (
 )
 
 type User struct {
-	Email      string `gorm:"primary_key"`
-	ProviderID string `gorm:"index:idx_name,unique"`
-	Provider   string
-	Name       string
-	AvatarURL  string
-	APIKey     string
+	Email            string `gorm:"primary_key"`
+	ProviderID       string `gorm:"index:idx_name,unique"`
+	Provider         string
+	Name             string
+	AvatarURL        string
+	SlackAccessToken string
 }
 
 func initEnv() {
@@ -150,8 +148,25 @@ func handleSlackAuthCallback() gin.HandlerFunc {
 		}
 
 		log.Println("Access token:", token.AccessToken)
+
+		email := getEmailFromSession(c)
+
+		// Update the user's Slack access token in the database
+		user := User{}
+		result := db.Where("email = ?", email).First(&user)
+		if result.Error != nil {
+			c.AbortWithError(http.StatusInternalServerError, result.Error)
+			return
+		}
+
+		user.SlackAccessToken = token.AccessToken
+		result = db.Save(&user)
+		if result.Error != nil {
+			c.AbortWithError(http.StatusInternalServerError, result.Error)
+			return
+		}
+
 		c.Redirect(http.StatusFound, "/")
-		// Save the access token to your database or use it to make API calls to the user's workspace.
 	}
 }
 
@@ -167,7 +182,7 @@ func handleHome(db *gorm.DB) gin.HandlerFunc {
 
 		// If authorized, display the user's name and avatar
 		user := getUserFromDB(c)
-		c.HTML(http.StatusOK, "dashboard.html", gin.H{"user": user})
+		c.HTML(http.StatusOK, "dashboard.html", gin.H{"user": user, "isSlackConnected": isSlackConnected(c)})
 	}
 }
 
@@ -211,7 +226,6 @@ func handleGoogleCallback(db *gorm.DB) gin.HandlerFunc {
 			Email:      profile.Email,
 			Name:       profile.Name,
 			AvatarURL:  profile.AvatarURL,
-			APIKey:     generateAPIKey(),
 		}
 
 		result := db.Clauses(clause.OnConflict{
@@ -261,6 +275,13 @@ func isUserSessionAuthorized(c *gin.Context) bool {
 	email := session.Get(authorizedUserKey)
 
 	return email != nil
+}
+
+func isSlackConnected(c *gin.Context) bool {
+	email := getEmailFromSession(c)
+	var user User
+	result := db.Where("email = ? AND slack_access_token NOT NULL", email).First(&user)
+	return result.Error == nil
 }
 
 func getUserFromDB(c *gin.Context) *User {
