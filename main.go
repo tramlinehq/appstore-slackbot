@@ -1,6 +1,7 @@
 package main
 
 import (
+	"database/sql"
 	"encoding/json"
 	"fmt"
 	"github.com/gin-contrib/sessions"
@@ -41,9 +42,9 @@ type User struct {
 	Email            string `gorm:"primary_key"`
 	ProviderID       string `gorm:"index:idx_name,unique"`
 	Provider         string
-	Name             string
-	AvatarURL        string
-	SlackAccessToken string
+	Name             sql.NullString
+	AvatarURL        sql.NullString
+	SlackAccessToken sql.NullString
 }
 
 func initEnv() {
@@ -167,7 +168,7 @@ func handleSlackAuthCallback() gin.HandlerFunc {
 			return
 		}
 
-		user.SlackAccessToken = token.AccessToken
+		user.SlackAccessToken = sql.NullString{String: token.AccessToken, Valid: true}
 		result = db.Save(&user)
 		if result.Error != nil {
 			c.AbortWithError(http.StatusInternalServerError, result.Error)
@@ -232,8 +233,8 @@ func handleGoogleCallback(db *gorm.DB) gin.HandlerFunc {
 			Provider:   "google",
 			ProviderID: profile.ID,
 			Email:      profile.Email,
-			Name:       profile.Name,
-			AvatarURL:  profile.AvatarURL,
+			Name:       sql.NullString{String: profile.Name, Valid: true},
+			AvatarURL:  sql.NullString{String: profile.AvatarURL, Valid: true},
 		}
 
 		result := db.Clauses(clause.OnConflict{

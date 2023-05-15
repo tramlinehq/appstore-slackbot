@@ -2,7 +2,7 @@
 <html>
   <img src="{{ .user.AvatarURL }}" />
   <br/>
-  hi, {{ .user.Name }}
+  hi, {{ .user.Name.String }}
 </html>
 <br/>
 {{ if .isSlackConnected }}
