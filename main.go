@@ -34,6 +34,7 @@ var (
 	slackClientID     string
 	slackClientSecret string
 	slackRedirectURI  string
+	appEnv            string
 )
 
 type User struct {
@@ -61,6 +62,7 @@ func initEnv() {
 	slackClientID = os.Getenv("SLACK_CLIENT_ID")
 	slackClientSecret = os.Getenv("SLACK_CLIENT_SECRET")
 	slackRedirectURI = os.Getenv("SLACK_REDIRECT_URL")
+	appEnv = os.Getenv("ENV")
 }
 
 // TODO: do we need to close the DB "conn"?
@@ -123,7 +125,13 @@ func initServer(db *gorm.DB) {
 	r.LoadHTMLGlob("templates/*")
 
 	// Start the server
-	err := r.RunTLS(":8080", "./config/certs/localhost.pem", "./config/certs/localhost-key.pem")
+	var err error
+	if appEnv == "production" {
+		err = r.Run(":8080")
+	} else {
+		err = r.RunTLS(":8080", "./config/certs/localhost.pem", "./config/certs/localhost-key.pem")
+	}
+
 	if err != nil {
 		fmt.Println(err)
 	}
