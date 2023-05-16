@@ -38,20 +38,25 @@
       {{ else }}
       <article>
         <h3>Add your ASC details</h3>
-        <form action="/auth/apple" method="POST">
+        <form action="/auth/apple" method="POST" enctype="multipart/form-data">
           <label for="bundle-id">
             Bundle ID
-            <input type="text" name="bundle-id" id="input">
+            <input type="text" name="bundle-id" id="bundle-id">
           </label>
 
           <label for="issuer-id">
             Issuer ID
-            <input type="text" name="issuer-id" id="input">
+            <input type="text" name="issuer-id" id="issuer-id">
           </label>
 
           <label for="key-id">
             Key ID
-            <input type="text" name="key-id" id="input">
+            <input type="text" name="key-id" id="key-id">
+          </label>
+
+          <label for="p8-file">
+            P8 File
+            <input type="file" name="p8-file" id="p8-file">
           </label>
 
           <footer>

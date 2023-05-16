@@ -1,6 +1,9 @@
 package main
 
 import (
+	"crypto/aes"
+	"crypto/cipher"
+	"crypto/rand"
 	"database/sql"
 	"encoding/json"
 	"fmt"
@@ -16,6 +19,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"io"
 )
 
 const (
@@ -36,6 +40,7 @@ var (
 	slackClientSecret string
 	slackRedirectURI  string
 	appEnv            string
+	encryptionKey     string
 )
 
 type User struct {
@@ -49,6 +54,8 @@ type User struct {
 	AppStoreIssuerID  sql.NullString
 	AppStoreKeyID     sql.NullString
 	AppStoreConnected bool `gorm:"default:false"`
+	AppStoreP8File    []byte
+	AppStoreP8FileIV  []byte
 }
 
 func initEnv() {
@@ -68,6 +75,7 @@ func initEnv() {
 	slackClientSecret = os.Getenv("SLACK_CLIENT_SECRET")
 	slackRedirectURI = os.Getenv("SLACK_REDIRECT_URL")
 	appEnv = os.Getenv("ENV")
+	encryptionKey = os.Getenv("ENCRYPTION_KEY")
 }
 
 // TODO: do we need to close the DB "conn"?
@@ -148,8 +156,38 @@ func handleAppStoreCreds() gin.HandlerFunc {
 		bundleID := c.PostForm("bundle-id")
 		issuerID := c.PostForm("issuer-id")
 		keyID := c.PostForm("key-id")
-		email := getEmailFromSession(c)
+		file, err := c.FormFile("p8-file")
+		if err != nil {
+			c.AbortWithError(http.StatusBadRequest, err)
+			return
+		}
 
+		// Open the uploaded file
+		fileData, err := file.Open()
+		if err != nil {
+			c.AbortWithError(http.StatusInternalServerError, err)
+			return
+		}
+		defer fileData.Close()
+
+		// Read the file data
+		p8FileBytes, err := io.ReadAll(fileData)
+		if err != nil {
+			c.AbortWithError(http.StatusInternalServerError, err)
+			return
+		}
+
+		// Generate a random IV (Initialization Vector)
+		iv := make([]byte, aes.BlockSize)
+		if _, err := rand.Read(iv); err != nil {
+			c.AbortWithError(http.StatusInternalServerError, err)
+			return
+		}
+
+		// Encrypt the file data using AES encryption
+		encryptedP8File := encrypt(p8FileBytes, []byte(encryptionKey), iv)
+
+		email := getEmailFromSession(c)
 		user := User{}
 		result := db.Where("email = ?", email).First(&user)
 		if result.Error != nil {
@@ -160,7 +198,10 @@ func handleAppStoreCreds() gin.HandlerFunc {
 		user.AppStoreKeyID = sql.NullString{String: keyID, Valid: true}
 		user.AppStoreBundleID = sql.NullString{String: bundleID, Valid: true}
 		user.AppStoreIssuerID = sql.NullString{String: issuerID, Valid: true}
+		user.AppStoreP8File = encryptedP8File
+		user.AppStoreP8FileIV = iv
 		user.AppStoreConnected = true
+
 		result = db.Save(&user)
 		if result.Error != nil {
 			c.AbortWithError(http.StatusInternalServerError, result.Error)
@@ -188,8 +229,6 @@ func handleSlackAuthCallback() gin.HandlerFunc {
 			c.AbortWithError(http.StatusInternalServerError, err)
 			return
 		}
-
-		log.Println("Access token:", token.AccessToken)
 
 		email := getEmailFromSession(c)
 
@@ -350,4 +389,30 @@ func getEmailFromSession(c *gin.Context) string {
 	}
 
 	return email.(string)
+}
+
+func encrypt(data []byte, key []byte, iv []byte) []byte {
+	block, err := aes.NewCipher(key)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	ciphertext := make([]byte, aes.BlockSize+len(data))
+	stream := cipher.NewCTR(block, iv)
+	stream.XORKeyStream(ciphertext[aes.BlockSize:], data)
+
+	return ciphertext
+}
+
+func decrypt(data []byte, key []byte, iv []byte) []byte {
+	block, err := aes.NewCipher(key)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	plaintext := make([]byte, len(data)-aes.BlockSize)
+	stream := cipher.NewCTR(block, iv)
+	stream.XORKeyStream(plaintext, data[aes.BlockSize:])
+
+	return plaintext
 }
