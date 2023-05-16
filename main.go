@@ -39,12 +39,16 @@ var (
 )
 
 type User struct {
-	Email            string `gorm:"primary_key"`
-	ProviderID       string `gorm:"index:idx_name,unique"`
-	Provider         string
-	Name             sql.NullString
-	AvatarURL        sql.NullString
-	SlackAccessToken sql.NullString
+	Email             string `gorm:"primary_key"`
+	ProviderID        string `gorm:"index:idx_name,unique"`
+	Provider          string
+	Name              sql.NullString
+	AvatarURL         sql.NullString
+	SlackAccessToken  sql.NullString
+	AppStoreBundleID  sql.NullString
+	AppStoreIssuerID  sql.NullString
+	AppStoreKeyID     sql.NullString
+	AppStoreConnected bool `gorm:"default:false"`
 }
 
 func initEnv() {
@@ -118,6 +122,7 @@ func initServer(db *gorm.DB) {
 	r.GET("/auth/google/callback", handleGoogleCallback(db))
 	r.GET("/auth/slack/start", handleSlackAuth())
 	r.GET("/auth/slack/callback", handleSlackAuthCallback())
+	r.POST("/auth/apple", handleAppStoreCreds())
 
 	// Serve the static files
 	r.Static("/static", "./static")
@@ -135,6 +140,34 @@ func initServer(db *gorm.DB) {
 
 	if err != nil {
 		fmt.Println(err)
+	}
+}
+
+func handleAppStoreCreds() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		bundleID := c.PostForm("bundle-id")
+		issuerID := c.PostForm("issuer-id")
+		keyID := c.PostForm("key-id")
+		email := getEmailFromSession(c)
+
+		user := User{}
+		result := db.Where("email = ?", email).First(&user)
+		if result.Error != nil {
+			c.AbortWithError(http.StatusInternalServerError, result.Error)
+			return
+		}
+
+		user.AppStoreKeyID = sql.NullString{String: keyID, Valid: true}
+		user.AppStoreBundleID = sql.NullString{String: bundleID, Valid: true}
+		user.AppStoreIssuerID = sql.NullString{String: issuerID, Valid: true}
+		user.AppStoreConnected = true
+		result = db.Save(&user)
+		if result.Error != nil {
+			c.AbortWithError(http.StatusInternalServerError, result.Error)
+			return
+		}
+
+		c.Redirect(http.StatusFound, "/")
 	}
 }
 
@@ -191,7 +224,7 @@ func handleHome(db *gorm.DB) gin.HandlerFunc {
 
 		// If authorized, display the user's name and avatar
 		user := getUserFromDB(c)
-		c.HTML(http.StatusOK, "dashboard.html", gin.H{"user": user, "isSlackConnected": isSlackConnected(c)})
+		c.HTML(http.StatusOK, "dashboard.html", gin.H{"user": user, "isSlackConnected": isSlackConnected(c), "isAppStoreConnected": isAppStoreConnected(c)})
 	}
 }
 
@@ -290,6 +323,13 @@ func isSlackConnected(c *gin.Context) bool {
 	email := getEmailFromSession(c)
 	var user User
 	result := db.Where("email = ? AND slack_access_token NOT NULL", email).First(&user)
+	return result.Error == nil
+}
+
+func isAppStoreConnected(c *gin.Context) bool {
+	email := getEmailFromSession(c)
+	var user User
+	result := db.Where("email = ? AND app_store_connected = 1", email).First(&user)
 	return result.Error == nil
 }
 
