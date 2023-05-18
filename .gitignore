@@ -2,3 +2,4 @@
 *.db
 app
 config/certs
+.idea/*

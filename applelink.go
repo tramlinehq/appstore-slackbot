@@ -13,26 +13,6 @@ import (
 	"time"
 )
 
-type AppleCredentials struct {
-	BundleID string
-	IssuerID string
-	KeyID    string
-	P8File   []byte
-}
-
-type ApplelinkCredentials struct {
-	Aud    string
-	Issuer string
-	Secret string
-}
-
-type AppMetadata struct {
-	Id       string `json:"id"`
-	Name     string `json:"name"`
-	BundleId string `json:"bundle_id"`
-	Sku      string `json:"sku"`
-}
-
 func GetAppMetadata(credentials AppleCredentials) (AppMetadata, error) {
 	appMetadata := AppMetadata{}
 
@@ -92,7 +72,6 @@ func getApplelinkAuthToken(credentials ApplelinkCredentials) string {
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 	signingKey := []byte(credentials.Secret)
 	signedToken, _ := token.SignedString(signingKey)
-	fmt.Println("Signed token", signedToken)
 	return signedToken
 }
 
