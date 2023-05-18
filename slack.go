@@ -9,7 +9,7 @@ func handleSlackCommand(form SlackFormData, user *User) SlackResponse {
 	case "info":
 		return handleInfoCommand(user)
 	case "live":
-		return createSlackResponse([]string{"Nothing *live* yet, _bruhahahaha_"})
+		return createSlackResponse([]string{"Nothing *live* yet, _bruhahahaha_."})
 	default:
 		return createSlackResponse([]string{"Please input a valid command"})
 

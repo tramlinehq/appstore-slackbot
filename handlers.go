@@ -15,7 +15,6 @@ import (
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 	"io"
-	"log"
 	"net/http"
 	"strconv"
 	"strings"
@@ -66,14 +65,8 @@ func handleAppStoreCreds() gin.HandlerFunc {
 		// Encrypt the file data using AES encryption
 		encryptedP8File := encrypt(p8FileBytes, []byte(encryptionKey), iv)
 
-		email := getEmailFromSession(c)
-		user := User{}
-		result := db.Where("email = ?", email).First(&user)
-		if result.Error != nil {
-			c.AbortWithError(http.StatusInternalServerError, result.Error)
-			return
-		}
-
+		userValue, _ := c.Get("user")
+		user, _ := userValue.(*User)
 		user.AppStoreKeyID = sql.NullString{String: keyID, Valid: true}
 		user.AppStoreBundleID = sql.NullString{String: bundleID, Valid: true}
 		user.AppStoreIssuerID = sql.NullString{String: issuerID, Valid: true}
@@ -81,7 +74,7 @@ func handleAppStoreCreds() gin.HandlerFunc {
 		user.AppStoreP8FileIV = iv
 		user.AppStoreConnected = true
 
-		result = db.Save(&user)
+		result := db.Save(&user)
 		if result.Error != nil {
 			c.AbortWithError(http.StatusInternalServerError, result.Error)
 			return
@@ -104,7 +97,6 @@ func handleSlackAuthCallback() gin.HandlerFunc {
 
 		token, err := slackOAuthConf.Exchange(c, code)
 		if err != nil {
-			log.Println(err)
 			c.AbortWithError(http.StatusInternalServerError, err)
 			return
 		}
@@ -113,21 +105,13 @@ func handleSlackAuthCallback() gin.HandlerFunc {
 		slackTeamID := team["id"].(string)
 		slackTeamName := team["name"].(string)
 
-		email := getEmailFromSession(c)
-
-		// Update the user's Slack access token in the database
-		user := User{}
-		result := db.Where("email = ?", email).First(&user)
-		if result.Error != nil {
-			c.AbortWithError(http.StatusInternalServerError, result.Error)
-			return
-		}
-
+		userValue, _ := c.Get("user")
+		user, _ := userValue.(*User)
 		user.SlackAccessToken = sql.NullString{String: token.AccessToken, Valid: true}
 		user.SlackRefreshToken = sql.NullString{String: token.RefreshToken, Valid: true}
 		user.SlackTeamID = sql.NullString{String: slackTeamID, Valid: true}
 		user.SlackTeamName = sql.NullString{String: slackTeamName, Valid: true}
-		result = db.Save(&user)
+		result := db.Save(&user)
 		if result.Error != nil {
 			c.AbortWithError(http.StatusInternalServerError, result.Error)
 			return
@@ -140,16 +124,15 @@ func handleSlackAuthCallback() gin.HandlerFunc {
 func handleHome(db *gorm.DB) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		// Check if the user is authorized
-		if !isUserSessionAuthorized(c) {
+		user, err := getUserFromSession(c)
+		if err != nil {
 			// If not, redirect to the login page
 			authURL := googleOAuthConf.AuthCodeURL("state")
 			c.Redirect(http.StatusFound, authURL)
 			return
 		}
 
-		// If authorized, display the user's name and avatar
-		user := getUserFromDB(c)
-		c.HTML(http.StatusOK, "dashboard.html", gin.H{"user": user, "isSlackConnected": isSlackConnected(c), "isAppStoreConnected": isAppStoreConnected(c)})
+		c.HTML(http.StatusOK, "index.html", gin.H{"user": user})
 	}
 }
 
@@ -237,16 +220,13 @@ func handleSlackCommands() gin.HandlerFunc {
 
 		defer c.Request.Body.Close()
 		body, err := io.ReadAll(c.Request.Body)
-
 		if err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			return
 		}
-
 		c.Request.Body = io.NopCloser(strings.NewReader(string(body)))
 
 		var form SlackFormData
-
 		if err := c.ShouldBind(&form); err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			return
@@ -254,21 +234,18 @@ func handleSlackCommands() gin.HandlerFunc {
 
 		// Verify signature
 		if !verifyRequestSignature(signature, timestamp, body) {
-			fmt.Println("slack handler: could not verify signature")
 			c.JSON(http.StatusOK, gin.H{"message": "Could not verify request!"})
 			return
 		}
 
 		// Verify timestamp drift
-		if !verifyRecentRequest(timestamp) {
-			fmt.Println("slack handler: possible replay attack!")
+		if !verifyRequestRecency(timestamp) {
 			c.JSON(http.StatusOK, gin.H{"message": "Could not verify request!"})
 			return
 		}
 
 		// Validate the token
 		if form.Token != slackVerificationToken {
-			fmt.Println("slack handler: could not verify token")
 			c.JSON(http.StatusOK, gin.H{"message": "Could not verify request!"})
 			return
 		}
@@ -276,15 +253,64 @@ func handleSlackCommands() gin.HandlerFunc {
 		// Verify valid team
 		user := getUserByTeamID(form.TeamId)
 		if user == nil {
-			fmt.Println("slack handler: could not find the team")
 			c.JSON(http.StatusOK, gin.H{"message": "who are you?"})
 			return
 		}
 
-		slackResponse := handleSlackCommand(form, user)
-
-		c.JSON(http.StatusOK, slackResponse)
+		c.JSON(http.StatusOK, handleSlackCommand(form, user))
 	}
+}
+
+func getUserFromSession(c *gin.Context) (*User, error) {
+	session := sessions.Default(c)
+	email := session.Get(authorizedUserKey)
+
+	if email == nil {
+		return nil, fmt.Errorf("no user found")
+	}
+
+	var user User
+	result := db.Where("email = ?", email).First(&user)
+	if result.Error != nil {
+		return nil, result.Error
+	}
+
+	return &user, nil
+}
+
+func getUserByTeamID(teamID string) *User {
+	var user User
+	db.Where("slack_team_id = ?", teamID).First(&user)
+
+	return &user
+}
+
+func getUserFromSessionMiddleware() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		user, err := getUserFromSession(c)
+		if err != nil {
+			c.AbortWithError(http.StatusInternalServerError, fmt.Errorf("no user found"))
+			return
+		}
+
+		c.Set("user", user)
+		c.Next()
+	}
+}
+
+func verifyRequestRecency(timestampStr string) bool {
+	timestamp, err := strconv.ParseInt(timestampStr, 10, 64)
+	if err != nil {
+		return false
+	}
+
+	timeDiff := time.Now().Unix() - timestamp
+	absoluteDiff := timeDiff
+	if timeDiff < 0 {
+		absoluteDiff = -absoluteDiff
+	}
+
+	return absoluteDiff < 5*60
 }
 
 func verifyRequestSignature(signature, timestamp string, body []byte) bool {
@@ -300,16 +326,14 @@ func verifyRequestSignature(signature, timestamp string, body []byte) bool {
 	return hmac.Equal([]byte(expectedSignature), []byte(signature))
 }
 
-func verifyRecentRequest(timestampStr string) bool {
-	timestamp, err := strconv.ParseInt(timestampStr, 10, 64)
-	if err != nil {
-		return false
+func validateAppStoreCreds(bundleID string, issuerID string, keyID string, p8FileBytes []byte) error {
+	appleCredentials := AppleCredentials{
+		BundleID: bundleID,
+		IssuerID: issuerID,
+		KeyID:    keyID,
+		P8File:   p8FileBytes,
 	}
-	timeDiff := time.Now().Unix() - timestamp
-	absoluteDiff := timeDiff
-	if timeDiff < 0 {
-		absoluteDiff = -absoluteDiff
-	}
-
-	return absoluteDiff < 5*60
+	appMetadata, err := GetAppMetadata(appleCredentials)
+	fmt.Println(appMetadata)
+	return err
 }

@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 
 echo 'Configuring local SSL certificates...'
+mkdir -p config/certs
 if [[ ! -f config/certs/localhost-key.pem ]] && [[ ! -f config/certs/localhost.pem ]]
 then
     mkcert -install

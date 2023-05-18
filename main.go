@@ -15,6 +15,37 @@ import (
 	"os"
 )
 
+const (
+	authorizedUserKey = "AUTHORIZED_USER_EMAIL"
+	certFilePath      = "./config/certs/localhost.pem"
+	certKeyFilePath   = "./config/certs/localhost-key.pem"
+	appPort           = ":8080"
+)
+
+var (
+	sessionName            string
+	dbName                 string
+	clientID               string
+	clientSecret           string
+	redirectURL            string
+	sessionSecret          string
+	db                     *gorm.DB
+	googleOAuthConf        *oauth2.Config
+	slackOAuthConf         *oauth2.Config
+	slackClientID          string
+	slackClientSecret      string
+	slackSigningSecret     string
+	slackVerificationToken string
+	slackRedirectURI       string
+	appEnv                 string
+	encryptionKey          string
+	applelinkAuthAud       string
+	applelinkAuthIssuer    string
+	applelinkAuthSecret    string
+	applelinkCredentials   *ApplelinkCredentials
+	applelinkHost          string
+)
+
 func initEnv() {
 	e := godotenv.Load()
 
@@ -39,7 +70,6 @@ func initEnv() {
 	applelinkAuthIssuer = os.Getenv("APPLELINK_AUTH_ISSUER")
 	applelinkAuthSecret = os.Getenv("APPLELINK_AUTH_SECRET")
 	applelinkHost = os.Getenv("APPLELINK_HOST")
-
 }
 
 // TODO: do we need to close the DB "conn"?
@@ -49,7 +79,6 @@ func initDB(name string) *gorm.DB {
 	if err != nil {
 		panic(err)
 	}
-
 	db.AutoMigrate(&User{})
 
 	return db
@@ -98,32 +127,26 @@ func handlePing() gin.HandlerFunc {
 func initServer(db *gorm.DB) {
 	r := gin.Default()
 
-	// Set up sessions middleware
 	store := cookie.NewStore([]byte(sessionSecret))
 	r.Use(sessions.Sessions(sessionName, store))
 
-	// Set up routes
 	r.GET("/", handleHome(db))
 	r.GET("/logout", handleLogout())
 	r.GET("/auth/google/callback", handleGoogleCallback(db))
 	r.GET("/auth/slack/start", handleSlackAuth())
-	r.GET("/auth/slack/callback", handleSlackAuthCallback())
-	r.POST("/auth/apple", handleAppStoreCreds())
+	r.GET("/auth/slack/callback", getUserFromSessionMiddleware(), handleSlackAuthCallback())
+	r.POST("/auth/apple", getUserFromSessionMiddleware(), handleAppStoreCreds())
 	r.GET("/ping", handlePing())
 	r.POST("/slack/listen", handleSlackCommands())
 
-	// Serve the static files
 	r.Static("/static", "./static")
-
-	// Load the HTML templates
 	r.LoadHTMLGlob("templates/*")
 
-	// Start the server
 	var err error
 	if appEnv == "production" {
-		err = r.Run(":8080")
+		err = r.Run(appPort)
 	} else {
-		err = r.RunTLS(":8080", "./config/certs/localhost.pem", "./config/certs/localhost-key.pem")
+		err = r.RunTLS(appPort, certFilePath, certKeyFilePath)
 	}
 
 	if err != nil {

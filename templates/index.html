@@ -23,7 +23,7 @@
       <hr/>
 
       <article>
-        {{ if .isSlackConnected }}
+        {{ if .user.SlackAccessToken.Valid }}
         Slack is connected!
         {{ else }}
         <a href="/auth/slack/start">
@@ -32,8 +32,8 @@
         {{ end }}
       </article>
 
-      {{ if .isSlackConnected }}
-      {{ if .isAppStoreConnected }}
+      {{ if .user.SlackAccessToken.Valid }}
+      {{ if .user.AppStoreConnected }}
       App Store is connected!
       {{ else }}
       <article>
