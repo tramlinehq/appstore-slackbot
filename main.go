@@ -45,6 +45,7 @@ var (
 	applelinkAuthIssuer  string
 	applelinkAuthSecret  string
 	applelinkCredentials *ApplelinkCredentials
+	applelinkHost        string
 )
 
 type User struct {
@@ -69,6 +70,7 @@ func initEnv() {
 		log.Fatalf("Error loading .env file: %s", e)
 	}
 
+	appEnv = os.Getenv("ENV")
 	sessionName = os.Getenv("APP_NAME")
 	dbName = os.Getenv("DB_NAME")
 	clientID = os.Getenv("GOOGLE_CLIENT_ID")
@@ -78,11 +80,11 @@ func initEnv() {
 	slackClientID = os.Getenv("SLACK_CLIENT_ID")
 	slackClientSecret = os.Getenv("SLACK_CLIENT_SECRET")
 	slackRedirectURI = os.Getenv("SLACK_REDIRECT_URL")
-	appEnv = os.Getenv("ENV")
 	encryptionKey = os.Getenv("ENCRYPTION_KEY")
 	applelinkAuthAud = os.Getenv("APPLELINK_AUTH_AUD")
 	applelinkAuthIssuer = os.Getenv("APPLELINK_AUTH_ISSUER")
 	applelinkAuthSecret = os.Getenv("APPLELINK_AUTH_SECRET")
+	applelinkHost = os.Getenv("APPLELINK_HOST")
 }
 
 // TODO: do we need to close the DB "conn"?

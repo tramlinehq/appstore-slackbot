@@ -36,7 +36,7 @@ type AppMetadata struct {
 func GetAppMetadata(applelinkCreds ApplelinkCredentials, credentials AppleCredentials) (AppMetadata, error) {
 	appMetadata := AppMetadata{}
 
-	requestURL := fmt.Sprintf("http://127.0.0.1:4000/apple/connect/v1/apps/%s", credentials.BundleID)
+	requestURL := fmt.Sprintf("%s/apple/connect/v1/apps/%s", applelinkHost, credentials.BundleID)
 	req, err := http.NewRequest(http.MethodGet, requestURL, nil)
 	if err != nil {
 		fmt.Printf("applelink: could not create request: %s\n", err)
