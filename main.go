@@ -11,6 +11,7 @@ import (
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 	"log"
+	"net/http"
 	"os"
 )
 
@@ -30,12 +31,15 @@ func initEnv() {
 	sessionSecret = os.Getenv("SECRET_SESSION_KEY")
 	slackClientID = os.Getenv("SLACK_CLIENT_ID")
 	slackClientSecret = os.Getenv("SLACK_CLIENT_SECRET")
+	slackSigningSecret = os.Getenv("SLACK_SIGNING_SECRET")
+	slackVerificationToken = os.Getenv("SLACK_VERIFICATION_TOKEN")
 	slackRedirectURI = os.Getenv("SLACK_REDIRECT_URL")
 	encryptionKey = os.Getenv("ENCRYPTION_KEY")
 	applelinkAuthAud = os.Getenv("APPLELINK_AUTH_AUD")
 	applelinkAuthIssuer = os.Getenv("APPLELINK_AUTH_ISSUER")
 	applelinkAuthSecret = os.Getenv("APPLELINK_AUTH_SECRET")
 	applelinkHost = os.Getenv("APPLELINK_HOST")
+
 }
 
 // TODO: do we need to close the DB "conn"?
@@ -85,6 +89,12 @@ func initApplelinkCreds() {
 	}
 }
 
+func handlePing() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		c.JSON(http.StatusOK, gin.H{"message": "pong"})
+	}
+}
+
 func initServer(db *gorm.DB) {
 	r := gin.Default()
 
@@ -99,6 +109,8 @@ func initServer(db *gorm.DB) {
 	r.GET("/auth/slack/start", handleSlackAuth())
 	r.GET("/auth/slack/callback", handleSlackAuthCallback())
 	r.POST("/auth/apple", handleAppStoreCreds())
+	r.GET("/ping", handlePing())
+	r.POST("/slack/listen", handleSlackCommands())
 
 	// Serve the static files
 	r.Static("/static", "./static")

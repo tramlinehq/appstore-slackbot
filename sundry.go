@@ -48,6 +48,12 @@ func getEmailFromSession(c *gin.Context) string {
 
 	return email.(string)
 }
+func getUserByTeamID(teamID string) *User {
+	var user User
+	db.Where("slack_team_id = ?", teamID).First(&user)
+
+	return &user
+}
 
 func encrypt(data []byte, key []byte, iv []byte) []byte {
 	block, err := aes.NewCipher(key)

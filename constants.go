@@ -10,23 +10,25 @@ const (
 )
 
 var (
-	sessionName          string
-	dbName               string
-	clientID             string
-	clientSecret         string
-	redirectURL          string
-	sessionSecret        string
-	db                   *gorm.DB
-	googleOAuthConf      *oauth2.Config
-	slackOAuthConf       *oauth2.Config
-	slackClientID        string
-	slackClientSecret    string
-	slackRedirectURI     string
-	appEnv               string
-	encryptionKey        string
-	applelinkAuthAud     string
-	applelinkAuthIssuer  string
-	applelinkAuthSecret  string
-	applelinkCredentials *ApplelinkCredentials
-	applelinkHost        string
+	sessionName            string
+	dbName                 string
+	clientID               string
+	clientSecret           string
+	redirectURL            string
+	sessionSecret          string
+	db                     *gorm.DB
+	googleOAuthConf        *oauth2.Config
+	slackOAuthConf         *oauth2.Config
+	slackClientID          string
+	slackClientSecret      string
+	slackSigningSecret     string
+	slackVerificationToken string
+	slackRedirectURI       string
+	appEnv                 string
+	encryptionKey          string
+	applelinkAuthAud       string
+	applelinkAuthIssuer    string
+	applelinkAuthSecret    string
+	applelinkCredentials   *ApplelinkCredentials
+	applelinkHost          string
 )

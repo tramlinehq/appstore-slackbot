@@ -2,8 +2,11 @@ package main
 
 import (
 	"crypto/aes"
+	"crypto/hmac"
 	"crypto/rand"
+	"crypto/sha256"
 	"database/sql"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"github.com/gin-contrib/sessions"
@@ -14,6 +17,9 @@ import (
 	"io"
 	"log"
 	"net/http"
+	"strconv"
+	"strings"
+	"time"
 )
 
 func handleAppStoreCreds() gin.HandlerFunc {
@@ -103,6 +109,10 @@ func handleSlackAuthCallback() gin.HandlerFunc {
 			return
 		}
 
+		team := token.Extra("team").(map[string]interface{})
+		slackTeamID := team["id"].(string)
+		slackTeamName := team["name"].(string)
+
 		email := getEmailFromSession(c)
 
 		// Update the user's Slack access token in the database
@@ -114,6 +124,9 @@ func handleSlackAuthCallback() gin.HandlerFunc {
 		}
 
 		user.SlackAccessToken = sql.NullString{String: token.AccessToken, Valid: true}
+		user.SlackRefreshToken = sql.NullString{String: token.RefreshToken, Valid: true}
+		user.SlackTeamID = sql.NullString{String: slackTeamID, Valid: true}
+		user.SlackTeamName = sql.NullString{String: slackTeamName, Valid: true}
 		result = db.Save(&user)
 		if result.Error != nil {
 			c.AbortWithError(http.StatusInternalServerError, result.Error)
@@ -215,4 +228,88 @@ func handleLogout() gin.HandlerFunc {
 		// Redirect back to the home page
 		c.Redirect(http.StatusFound, "/")
 	}
+}
+
+func handleSlackCommands() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		signature := c.GetHeader("X-Slack-Signature")
+		timestamp := c.GetHeader("X-Slack-Request-Timestamp")
+
+		defer c.Request.Body.Close()
+		body, err := io.ReadAll(c.Request.Body)
+
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
+		}
+
+		c.Request.Body = io.NopCloser(strings.NewReader(string(body)))
+
+		var form SlackFormData
+
+		if err := c.ShouldBind(&form); err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
+		}
+
+		// Verify signature
+		if !verifyRequestSignature(signature, timestamp, body) {
+			fmt.Println("slack handler: could not verify signature")
+			c.JSON(http.StatusOK, gin.H{"message": "Could not verify request!"})
+			return
+		}
+
+		// Verify timestamp drift
+		if !verifyRecentRequest(timestamp) {
+			fmt.Println("slack handler: possible replay attack!")
+			c.JSON(http.StatusOK, gin.H{"message": "Could not verify request!"})
+			return
+		}
+
+		// Validate the token
+		if form.Token != slackVerificationToken {
+			fmt.Println("slack handler: could not verify token")
+			c.JSON(http.StatusOK, gin.H{"message": "Could not verify request!"})
+			return
+		}
+
+		// Verify valid team
+		user := getUserByTeamID(form.TeamId)
+		if user == nil {
+			fmt.Println("slack handler: could not find the team")
+			c.JSON(http.StatusOK, gin.H{"message": "who are you?"})
+			return
+		}
+
+		slackResponse := handleSlackCommand(form, user)
+
+		c.JSON(http.StatusOK, slackResponse)
+	}
+}
+
+func verifyRequestSignature(signature, timestamp string, body []byte) bool {
+	// Concatenate the timestamp and request body
+	baseString := "v0:" + timestamp + ":" + string(body)
+
+	// Create a HMAC-SHA256 hash using the Slack signing secret
+	mac := hmac.New(sha256.New, []byte(slackSigningSecret))
+	mac.Write([]byte(baseString))
+	expectedSignature := "v0=" + hex.EncodeToString(mac.Sum(nil))
+
+	// Compare the expected signature with the received signature
+	return hmac.Equal([]byte(expectedSignature), []byte(signature))
+}
+
+func verifyRecentRequest(timestampStr string) bool {
+	timestamp, err := strconv.ParseInt(timestampStr, 10, 64)
+	if err != nil {
+		return false
+	}
+	timeDiff := time.Now().Unix() - timestamp
+	absoluteDiff := timeDiff
+	if timeDiff < 0 {
+		absoluteDiff = -absoluteDiff
+	}
+
+	return absoluteDiff < 5*60
 }

@@ -11,6 +11,9 @@ type User struct {
 	Name              sql.NullString
 	AvatarURL         sql.NullString
 	SlackAccessToken  sql.NullString
+	SlackRefreshToken sql.NullString
+	SlackTeamID       sql.NullString
+	SlackTeamName     sql.NullString
 	AppStoreBundleID  sql.NullString
 	AppStoreIssuerID  sql.NullString
 	AppStoreKeyID     sql.NullString
@@ -37,4 +40,35 @@ type AppMetadata struct {
 	Name     string `json:"name"`
 	BundleId string `json:"bundle_id"`
 	Sku      string `json:"sku"`
+}
+
+type SlackFormData struct {
+	Token          string `form:"token"`
+	TeamId         string `form:"team_id"`
+	TeamDomain     string `form:"team_domain"`
+	EnterpriseId   string `form:"enterprise_id"`
+	EnterpriseName string `form:"enterprise_name"`
+	ChannelId      string `form:"channel_id"`
+	ChannelName    string `form:"channel_name"`
+	UserId         string `form:"user_id"`
+	UserName       string `form:"user_name"`
+	Command        string `form:"command"`
+	Text           string `form:"text"`
+	ResponseUrl    string `form:"response_url"`
+	TriggerId      string `form:"trigger_id"`
+	ApiAppId       string `form:"api_app_id"`
+}
+
+type SlackResponseInsideText struct {
+	Type string `json:"type"`
+	Text string `json:"text"`
+}
+
+type SlackResponseText struct {
+	Type string                  `json:"type"`
+	Text SlackResponseInsideText `json:"text"`
+}
+
+type SlackResponse struct {
+	Blocks []SlackResponseText `json:"blocks"`
 }
