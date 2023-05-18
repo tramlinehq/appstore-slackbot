@@ -16,10 +16,10 @@ import (
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
+	"io"
 	"log"
 	"net/http"
 	"os"
-	"io"
 )
 
 const (
@@ -27,20 +27,24 @@ const (
 )
 
 var (
-	sessionName       string
-	dbName            string
-	clientID          string
-	clientSecret      string
-	redirectURL       string
-	sessionSecret     string
-	db                *gorm.DB
-	googleOAuthConf   *oauth2.Config
-	slackOAuthConf    *oauth2.Config
-	slackClientID     string
-	slackClientSecret string
-	slackRedirectURI  string
-	appEnv            string
-	encryptionKey     string
+	sessionName          string
+	dbName               string
+	clientID             string
+	clientSecret         string
+	redirectURL          string
+	sessionSecret        string
+	db                   *gorm.DB
+	googleOAuthConf      *oauth2.Config
+	slackOAuthConf       *oauth2.Config
+	slackClientID        string
+	slackClientSecret    string
+	slackRedirectURI     string
+	appEnv               string
+	encryptionKey        string
+	applelinkAuthAud     string
+	applelinkAuthIssuer  string
+	applelinkAuthSecret  string
+	applelinkCredentials *ApplelinkCredentials
 )
 
 type User struct {
@@ -76,6 +80,9 @@ func initEnv() {
 	slackRedirectURI = os.Getenv("SLACK_REDIRECT_URL")
 	appEnv = os.Getenv("ENV")
 	encryptionKey = os.Getenv("ENCRYPTION_KEY")
+	applelinkAuthAud = os.Getenv("APPLELINK_AUTH_AUD")
+	applelinkAuthIssuer = os.Getenv("APPLELINK_AUTH_ISSUER")
+	applelinkAuthSecret = os.Getenv("APPLELINK_AUTH_SECRET")
 }
 
 // TODO: do we need to close the DB "conn"?
@@ -114,6 +121,14 @@ func initSlackOAuthConf() {
 		},
 		RedirectURL: slackRedirectURI,
 		Scopes:      []string{"chat:write", "chat:write.customize", "commands"},
+	}
+}
+
+func initApplelinkCreds() {
+	applelinkCredentials = &ApplelinkCredentials{
+		Aud:    applelinkAuthAud,
+		Issuer: applelinkAuthIssuer,
+		Secret: applelinkAuthSecret,
 	}
 }
 
@@ -174,6 +189,14 @@ func handleAppStoreCreds() gin.HandlerFunc {
 		p8FileBytes, err := io.ReadAll(fileData)
 		if err != nil {
 			c.AbortWithError(http.StatusInternalServerError, err)
+			return
+		}
+
+		//Validate app store creds
+		err = validateAppStoreCreds(bundleID, issuerID, keyID, p8FileBytes)
+		if err != nil {
+			fmt.Printf("validation of apple credebntaisl failed with : %s\n", err)
+			c.AbortWithError(http.StatusUnprocessableEntity, err)
 			return
 		}
 
@@ -348,6 +371,7 @@ func main() {
 	initEnv()
 	initSlackOAuthConf()
 	initGoogleOAuthConf()
+	initApplelinkCreds()
 	initServer(initDB(dbName))
 }
 
@@ -415,4 +439,16 @@ func decrypt(data []byte, key []byte, iv []byte) []byte {
 	stream.XORKeyStream(plaintext, data[aes.BlockSize:])
 
 	return plaintext
+}
+
+func validateAppStoreCreds(bundleID string, issuerID string, keyID string, p8FileBytes []byte) error {
+	appleCredentials := AppleCredentials{
+		BundleID: bundleID,
+		IssuerID: issuerID,
+		KeyID:    keyID,
+		P8File:   p8FileBytes,
+	}
+	appMetadata, err := GetAppMetadata(*applelinkCredentials, appleCredentials)
+	fmt.Println(appMetadata)
+	return err
 }
