@@ -33,7 +33,7 @@ type AppMetadata struct {
 	Sku      string `json:"sku"`
 }
 
-func GetAppMetadata(applelinkCreds ApplelinkCredentials, credentials AppleCredentials) (AppMetadata, error) {
+func GetAppMetadata(credentials AppleCredentials) (AppMetadata, error) {
 	appMetadata := AppMetadata{}
 
 	requestURL := fmt.Sprintf("%s/apple/connect/v1/apps/%s", applelinkHost, credentials.BundleID)
@@ -43,13 +43,13 @@ func GetAppMetadata(applelinkCreds ApplelinkCredentials, credentials AppleCreden
 		return appMetadata, err
 	}
 
-	storeToken, err := getStoreToken(credentials)
+	storeToken, err := getAppStoreToken(credentials)
 	if err != nil {
 		fmt.Printf("applelink: could not create store token: %s\n", err)
 		return appMetadata, err
 	}
 
-	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", getAuthToken(applelinkCreds)))
+	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", getApplelinkAuthToken(*applelinkCredentials)))
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("X-AppStoreConnect-Key-Id", credentials.KeyID)
 	req.Header.Set("X-AppStoreConnect-Issuer-Id", credentials.IssuerID)
@@ -61,11 +61,12 @@ func GetAppMetadata(applelinkCreds ApplelinkCredentials, credentials AppleCreden
 		fmt.Printf("applelink: request failed: %s\n", err)
 		return appMetadata, err
 	}
-	defer resp.Body.Close()
 
 	if resp.StatusCode > 299 {
 		return appMetadata, fmt.Errorf("applelink: request failed with status - %d", resp.StatusCode)
 	}
+
+	defer resp.Body.Close()
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		fmt.Printf("applelink: could not read response body: %s\n", err)
@@ -80,7 +81,7 @@ func GetAppMetadata(applelinkCreds ApplelinkCredentials, credentials AppleCreden
 	return appMetadata, err
 }
 
-func getAuthToken(credentials ApplelinkCredentials) string {
+func getApplelinkAuthToken(credentials ApplelinkCredentials) string {
 	expiry := time.Now().Add(10 * time.Minute)
 	claims := &jwt.RegisteredClaims{
 		Audience:  jwt.ClaimStrings{credentials.Aud},
@@ -95,7 +96,7 @@ func getAuthToken(credentials ApplelinkCredentials) string {
 	return signedToken
 }
 
-func getStoreToken(credentials AppleCredentials) (string, error) {
+func getAppStoreToken(credentials AppleCredentials) (string, error) {
 	expiry := time.Now().Add(10 * time.Minute)
 
 	claims := &jwt.RegisteredClaims{

@@ -197,7 +197,7 @@ func handleAppStoreCreds() gin.HandlerFunc {
 		//Validate app store creds
 		err = validateAppStoreCreds(bundleID, issuerID, keyID, p8FileBytes)
 		if err != nil {
-			fmt.Printf("validation of apple credebntaisl failed with : %s\n", err)
+			fmt.Printf("validation of apple credentials failed with : %s\n", err)
 			c.AbortWithError(http.StatusUnprocessableEntity, err)
 			return
 		}
@@ -450,7 +450,7 @@ func validateAppStoreCreds(bundleID string, issuerID string, keyID string, p8Fil
 		KeyID:    keyID,
 		P8File:   p8FileBytes,
 	}
-	appMetadata, err := GetAppMetadata(*applelinkCredentials, appleCredentials)
+	appMetadata, err := GetAppMetadata(appleCredentials)
 	fmt.Println(appMetadata)
 	return err
 }
