@@ -3,3 +3,5 @@
 app
 config/certs
 .idea/*
+tmp/
+.DS_Store

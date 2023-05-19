@@ -8,6 +8,9 @@
     <nav>
       <ul>
         <li>
+          <img src="/assets/apple-on-slack.png" width="50"/>
+        </li>
+        <li>
           <a href="/logout">logout</a>
         </li>
       </ul>
@@ -24,7 +27,7 @@
 
       <article>
         {{ if .user.SlackAccessToken.Valid }}
-        Slack is connected!
+        <p>✅ Slack is connected!</p>
         {{ else }}
         <a href="/auth/slack/start">
           <img alt="Add to Slack" height="40" width="139" src="https://platform.slack-edge.com/img/add_to_slack.png" srcSet="https://platform.slack-edge.com/img/add_to_slack.png 1x, https://platform.slack-edge.com/img/add_to_slack@2x.png 2x" />
@@ -34,7 +37,12 @@
 
       {{ if .user.SlackAccessToken.Valid }}
       {{ if .user.AppStoreConnected }}
-      App Store is connected!
+      <p>✅ App Store is connected!</p>
+      <article>
+        <p>Start using ciderbot in your Slack now!</p>
+        <p>Example usage: <code>/applelink info</code></p>
+        <p>Run <code>/applelink help</code> to see more commands.</p>
+      </article>
       {{ else }}
       <article>
         <h3>Add your ASC details</h3>

@@ -139,7 +139,7 @@ func initServer(db *gorm.DB) {
 	r.GET("/ping", handlePing())
 	r.POST("/slack/listen", handleSlackCommands())
 
-	r.Static("/static", "./static")
+	r.Static("/assets", "./assets")
 	r.LoadHTMLGlob("templates/*")
 
 	var err error
