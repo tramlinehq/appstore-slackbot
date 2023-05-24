@@ -130,7 +130,7 @@ func initServer(db *gorm.DB) {
 	store := cookie.NewStore([]byte(sessionSecret))
 	r.Use(sessions.Sessions(sessionName, store))
 
-	r.GET("/", handleHome(db))
+	r.GET("/", handleHome())
 	r.GET("/logout", handleLogout())
 	r.GET("/auth/google/callback", handleGoogleCallback(db))
 	r.GET("/auth/slack/start", handleSlackAuth())

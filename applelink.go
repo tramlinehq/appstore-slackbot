@@ -13,20 +13,18 @@ import (
 	"time"
 )
 
-func GetAppMetadata(credentials AppleCredentials) (AppMetadata, error) {
-	appMetadata := AppMetadata{}
-
-	requestURL := fmt.Sprintf("%s/apple/connect/v1/apps/%s", applelinkHost, credentials.BundleID)
+func applelinkGet(credentials *AppleCredentials, requestURL string) ([]byte, error) {
+	var response []byte
 	req, err := http.NewRequest(http.MethodGet, requestURL, nil)
 	if err != nil {
 		fmt.Printf("applelink: could not create request: %s\n", err)
-		return appMetadata, err
+		return response, err
 	}
 
 	storeToken, err := getAppStoreToken(credentials)
 	if err != nil {
 		fmt.Printf("applelink: could not create store token: %s\n", err)
-		return appMetadata, err
+		return response, err
 	}
 
 	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", getApplelinkAuthToken(*applelinkCredentials)))
@@ -39,19 +37,30 @@ func GetAppMetadata(credentials AppleCredentials) (AppMetadata, error) {
 
 	if err != nil {
 		fmt.Printf("applelink: request failed: %s\n", err)
-		return appMetadata, err
+		return response, err
 	}
 
 	if resp.StatusCode > 299 {
-		return appMetadata, fmt.Errorf("applelink: request failed with status - %d", resp.StatusCode)
+		return response, fmt.Errorf("applelink: request failed with status - %d", resp.StatusCode)
 	}
 
 	defer resp.Body.Close()
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		fmt.Printf("applelink: could not read response body: %s\n", err)
-		return appMetadata, err
+		return body, err
 	}
+
+	return body, err
+
+}
+
+func getAppMetadata(credentials *AppleCredentials) (AppMetadata, error) {
+	appMetadata := AppMetadata{}
+
+	requestURL := fmt.Sprintf("%s/apple/connect/v1/apps/%s", applelinkHost, credentials.BundleID)
+	body, err := applelinkGet(credentials, requestURL)
+
 	err = json.Unmarshal(body, &appMetadata)
 	if err != nil {
 		fmt.Printf("applelink: could not parse reponse body: %s\n", err)
@@ -59,6 +68,21 @@ func GetAppMetadata(credentials AppleCredentials) (AppMetadata, error) {
 	}
 
 	return appMetadata, err
+}
+
+func getAppCurrentStatus(credentials *AppleCredentials) ([]AppCurrentStatus, error) {
+	var appCurrentStatuses []AppCurrentStatus
+
+	requestURL := fmt.Sprintf("%s/apple/connect/v1/apps/%s/current_status", applelinkHost, credentials.BundleID)
+
+	body, err := applelinkGet(credentials, requestURL)
+	err = json.Unmarshal(body, &appCurrentStatuses)
+	if err != nil {
+		fmt.Printf("applelink: could not parse reponse body: %s\n", err)
+		return appCurrentStatuses, err
+	}
+
+	return appCurrentStatuses, err
 }
 
 func getApplelinkAuthToken(credentials ApplelinkCredentials) string {
@@ -75,7 +99,7 @@ func getApplelinkAuthToken(credentials ApplelinkCredentials) string {
 	return signedToken
 }
 
-func getAppStoreToken(credentials AppleCredentials) (string, error) {
+func getAppStoreToken(credentials *AppleCredentials) (string, error) {
 	expiry := time.Now().Add(10 * time.Minute)
 
 	claims := &jwt.RegisteredClaims{

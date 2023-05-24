@@ -2,6 +2,7 @@ package main
 
 import (
 	"database/sql"
+	"time"
 )
 
 type User struct {
@@ -42,6 +43,17 @@ type AppMetadata struct {
 	Sku      string `json:"sku"`
 }
 
+type AppCurrentStatus struct {
+	Name   string `json:"name"`
+	Builds []struct {
+		Id            string    `json:"id"`
+		BuildNumber   string    `json:"build_number"`
+		Status        string    `json:"status"`
+		VersionString string    `json:"version_string"`
+		ReleaseDate   time.Time `json:"release_date"`
+	} `json:"builds"`
+}
+
 type SlackFormData struct {
 	Token          string `form:"token"`
 	TeamId         string `form:"team_id"`
@@ -70,5 +82,6 @@ type SlackResponseText struct {
 }
 
 type SlackResponse struct {
-	Blocks []SlackResponseText `json:"blocks"`
+	Blocks       []SlackResponseText `json:"blocks"`
+	ResponseType string              `json:"response_type"`
 }

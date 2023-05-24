@@ -121,7 +121,7 @@ func handleSlackAuthCallback() gin.HandlerFunc {
 	}
 }
 
-func handleHome(db *gorm.DB) gin.HandlerFunc {
+func handleHome() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		// Check if the user is authorized
 		user, err := getUserFromSession(c)
@@ -333,7 +333,7 @@ func validateAppStoreCreds(bundleID string, issuerID string, keyID string, p8Fil
 		KeyID:    keyID,
 		P8File:   p8FileBytes,
 	}
-	appMetadata, err := GetAppMetadata(appleCredentials)
+	appMetadata, err := getAppMetadata(&appleCredentials)
 	fmt.Println(appMetadata)
 	return err
 }
