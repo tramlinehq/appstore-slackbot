@@ -9,19 +9,20 @@ import (
 )
 
 var ValidSlackCommands = map[string]string{
-	"app_info":            "app_info",
-	"overall_status":      "overall_status",
-	"beta_groups":         "beta_groups",
-	"inflight_release":    "inflight_release",
-	"live_release":        "live_release",
-	"pause_live_release":  "pause_live_release",
-	"resume_live_release": "resume_live_release",
-	"release_to_all":      "release_to_all",
+	"help":                "👀 Get the usage guide for appstoreslackbot",
+	"app_info":            "ℹ️ Get some basic information about your app to verify you are working with the correct app",
+	"overall_status":      "🏪 Get an overall store status for your app, what builds are distributed to which channels (TestFlight and AppStore)",
+	"beta_groups":         "🧪 List all the beta groups present in TestFlight",
+	"inflight_release":    "🛫 Get the current inflight release in the App Store",
+	"live_release":        "📱Get the current live release in the App Store",
+	"pause_live_release":  "⏸️ Pause the phased release of the current live release in the App Store",
+	"resume_live_release": "▶️ Resume the phased release of the current live release in the App Store",
+	"release_to_all":      "🎢 Release the current live release in the App Store to all users",
 }
 
 func handleSlackCommand(form SlackFormData, user *User) SlackResponse {
 	command := strings.Split(form.Text, " ")[0]
-	if command, ok := ValidSlackCommands[command]; ok == true {
+	if _, ok := ValidSlackCommands[command]; ok == true {
 		go handleValidSlackCommand(command, form.ResponseUrl, user)
 		return createEphemeralSlackResponse(fmt.Sprintf("Got %s command, working on it.", command))
 	}
@@ -36,6 +37,8 @@ func handleValidSlackCommand(command string, responseURL string, user *User) {
 
 func processValidSlackCommand(command string, user *User) SlackResponse {
 	switch command {
+	case "help":
+		return handleHelpCommand(user)
 	case "app_info":
 		return handleInfoCommand(user)
 	case "overall_status":
@@ -80,6 +83,15 @@ func sendResponseToSlack(requestURL string, slackResponse SlackResponse) error {
 		return err
 	}
 	return nil
+}
+
+func handleHelpCommand(_user *User) SlackResponse {
+	var helpMessages []string
+	for command, commandHelptext := range ValidSlackCommands {
+		helpMessages = append(helpMessages, fmt.Sprintf("*%s* – %s", command, commandHelptext))
+	}
+
+	return createSlackResponse("Usage Guide", helpMessages)
 }
 
 func handleInfoCommand(user *User) SlackResponse {
