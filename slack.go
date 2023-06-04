@@ -16,6 +16,7 @@ var ValidSlackCommands = map[string]*regexp.Regexp{
 	"live_release":        regexp.MustCompile("live_release"),
 	"pause_live_release":  regexp.MustCompile("pause_live_release"),
 	"resume_live_release": regexp.MustCompile("resume_live_release"),
+	"release_to_all":      regexp.MustCompile("release_to_all"),
 }
 
 func handleSlackCommand(form SlackFormData, user *User) SlackResponse {
@@ -52,6 +53,8 @@ func processValidSlackCommand(commandPattern *regexp.Regexp, command string, use
 		return handlePauseReleaseCommand(user)
 	case "resume_live_release":
 		return handleResumeReleaseCommand(user)
+	case "release_to_all":
+		return handleReleaseToAllCommand(user)
 	default:
 		return createSlackResponse([]string{"Please input a valid command"}, "ephemeral")
 
@@ -174,6 +177,25 @@ func handleResumeReleaseCommand(user *User) SlackResponse {
 	liveRelease, err := resumeLiveRelease(userAppleCredentials(user))
 	if err != nil {
 		return createSlackResponse([]string{"Could not find an paused release to resume."}, "ephemeral")
+	}
+
+	return createSlackResponse([]string{fmt.Sprintf(`Live Release:
+Version: %s
+Build Number: %s
+Store Status: %s
+Phased Release Status: %s
+Phased Release Day: %d`,
+		liveRelease.VersionName,
+		liveRelease.BuildNumber,
+		liveRelease.AppStoreState,
+		liveRelease.PhasedRelease.PhasedReleaseState,
+		liveRelease.PhasedRelease.CurrentDayNumber)}, "in_channel")
+}
+
+func handleReleaseToAllCommand(user *User) SlackResponse {
+	liveRelease, err := releaseToAll(userAppleCredentials(user))
+	if err != nil {
+		return createSlackResponse([]string{"Could not find an live release to release to all."}, "ephemeral")
 	}
 
 	return createSlackResponse([]string{fmt.Sprintf(`Live Release:

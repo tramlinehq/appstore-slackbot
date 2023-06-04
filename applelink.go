@@ -145,6 +145,21 @@ func resumeLiveRelease(credentials *AppleCredentials) (Release, error) {
 	return liveRelease, err
 }
 
+func releaseToAll(credentials *AppleCredentials) (Release, error) {
+	var liveRelease Release
+
+	requestURL := fmt.Sprintf("%s/apple/connect/v1/apps/%s/release/live/rollout/complete", applelinkHost, credentials.BundleID)
+
+	body, err := applelinkRequest(credentials, requestURL, http.MethodPatch)
+	err = json.Unmarshal(body, &liveRelease)
+	if err != nil {
+		fmt.Printf("applelink: could not parse reponse body: %s\n", err)
+		return liveRelease, err
+	}
+
+	return liveRelease, err
+}
+
 func getApplelinkAuthToken(credentials ApplelinkCredentials) string {
 	expiry := time.Now().Add(10 * time.Minute)
 	claims := &jwt.RegisteredClaims{
