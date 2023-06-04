@@ -100,6 +100,21 @@ func getBetaGroups(credentials *AppleCredentials) ([]BetaGroup, error) {
 	return betaGroups, err
 }
 
+func getInflightRelease(credentials *AppleCredentials) (Release, error) {
+	var inflightRelease Release
+
+	requestURL := fmt.Sprintf("%s/apple/connect/v1/apps/%s/release", applelinkHost, credentials.BundleID)
+
+	body, err := applelinkRequest(credentials, requestURL, http.MethodGet)
+	err = json.Unmarshal(body, &inflightRelease)
+	if err != nil {
+		fmt.Printf("applelink: could not parse reponse body: %s\n", err)
+		return inflightRelease, err
+	}
+
+	return inflightRelease, err
+}
+
 func getLiveRelease(credentials *AppleCredentials) (Release, error) {
 	var liveRelease Release
 

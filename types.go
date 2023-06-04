@@ -116,45 +116,12 @@ type SlackResponseInsideText struct {
 }
 
 type SlackResponseText struct {
-	Type string                  `json:"type"`
-	Text SlackResponseInsideText `json:"text"`
+	Type   string                    `json:"type"`
+	Text   SlackResponseInsideText   `json:"text"`
+	Fields []SlackResponseInsideText `json:"fields,omitempty"`
 }
 
 type SlackResponse struct {
 	Blocks       []SlackResponseText `json:"blocks"`
 	ResponseType string              `json:"response_type"`
 }
-
-//type SlackModalResponse struct {
-//	Title struct {
-//		Type string `json:"type"`
-//		Text string `json:"text"`
-//	} `json:"title"`
-//	Submit struct {
-//		Type string `json:"type"`
-//		Text string `json:"text"`
-//	} `json:"submit"`
-//	Blocks []struct {
-//		Type    string `json:"type"`
-//		Element struct {
-//			Type        string `json:"type"`
-//			ActionId    string `json:"action_id"`
-//			Placeholder struct {
-//				Type string `json:"type"`
-//				Text string `json:"text"`
-//			} `json:"placeholder,omitempty"`
-//			Options []struct {
-//				Text struct {
-//					Type string `json:"type"`
-//					Text string `json:"text"`
-//				} `json:"text"`
-//				Value string `json:"value"`
-//			} `json:"options,omitempty"`
-//		} `json:"element"`
-//		Label struct {
-//			Type string `json:"type"`
-//			Text string `json:"text"`
-//		} `json:"label"`
-//	} `json:"blocks"`
-//	Type string `json:"type"`
-//}

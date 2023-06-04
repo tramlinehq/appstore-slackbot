@@ -5,48 +5,45 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"regexp"
 	"strings"
 )
 
-var ValidSlackCommands = map[string]*regexp.Regexp{
-	"app_info":            regexp.MustCompile("app_info"),
-	"overall_status":      regexp.MustCompile("overall_status"),
-	"beta_groups":         regexp.MustCompile("beta_groups"),
-	"live_release":        regexp.MustCompile("live_release"),
-	"pause_live_release":  regexp.MustCompile("pause_live_release"),
-	"resume_live_release": regexp.MustCompile("resume_live_release"),
-	"release_to_all":      regexp.MustCompile("release_to_all"),
+var ValidSlackCommands = map[string]string{
+	"app_info":            "app_info",
+	"overall_status":      "overall_status",
+	"beta_groups":         "beta_groups",
+	"inflight_release":    "inflight_release",
+	"live_release":        "live_release",
+	"pause_live_release":  "pause_live_release",
+	"resume_live_release": "resume_live_release",
+	"release_to_all":      "release_to_all",
 }
 
 func handleSlackCommand(form SlackFormData, user *User) SlackResponse {
-	fmt.Println("command", form.Command)
-	fmt.Println("text", form.Text)
-
 	command := strings.Split(form.Text, " ")[0]
-	if commandPattern, ok := ValidSlackCommands[command]; ok == true {
-		go handleValidSlackCommand(commandPattern, form.Text, form.ResponseUrl, user)
-		return createSlackResponse([]string{"Got it, working on it."}, "ephemeral")
+	if command, ok := ValidSlackCommands[command]; ok == true {
+		go handleValidSlackCommand(command, form.ResponseUrl, user)
+		return createEphemeralSlackResponse(fmt.Sprintf("Got %s command, working on it.", command))
 	}
 
-	return createSlackResponse([]string{"Please input a valid command"}, "ephemeral")
-
+	return createEphemeralSlackResponse("Please input a valid command")
 }
 
-func handleValidSlackCommand(commandPattern *regexp.Regexp, command string, responseURL string, user *User) {
-	slackResponse := processValidSlackCommand(commandPattern, command, user)
+func handleValidSlackCommand(command string, responseURL string, user *User) {
+	slackResponse := processValidSlackCommand(command, user)
 	sendResponseToSlack(responseURL, slackResponse)
 }
 
-func processValidSlackCommand(commandPattern *regexp.Regexp, command string, user *User) SlackResponse {
-	matched := commandPattern.FindAllString(command, -1)
-	switch matched[0] {
+func processValidSlackCommand(command string, user *User) SlackResponse {
+	switch command {
 	case "app_info":
 		return handleInfoCommand(user)
 	case "overall_status":
 		return handleCurrentStatusCommand(user)
 	case "beta_groups":
 		return handleBetaGroupsCommand(user)
+	case "inflight_release":
+		return handleInflightReleaseCommand(user)
 	case "live_release":
 		return handleLiveReleaseCommand(user)
 	case "pause_live_release":
@@ -56,7 +53,7 @@ func processValidSlackCommand(commandPattern *regexp.Regexp, command string, use
 	case "release_to_all":
 		return handleReleaseToAllCommand(user)
 	default:
-		return createSlackResponse([]string{"Please input a valid command"}, "ephemeral")
+		return createEphemeralSlackResponse("Please input a valid command")
 
 	}
 }
@@ -88,21 +85,20 @@ func sendResponseToSlack(requestURL string, slackResponse SlackResponse) error {
 func handleInfoCommand(user *User) SlackResponse {
 	appMetadata, err := getAppMetadata(userAppleCredentials(user))
 	if err != nil {
-		return createSlackResponse([]string{"Could not find an app."}, "ephemeral")
+		return createEphemeralSlackResponse("Could not find an app.")
 	}
 
-	return createSlackResponse([]string{fmt.Sprintf(`App Info:
-Name: %s
+	return createSlackResponse("App Info", []string{fmt.Sprintf(`Name: %s
 SKU: %s
 Bundle ID: %s
 ID: %s`,
-		appMetadata.Name, appMetadata.Sku, appMetadata.BundleId, appMetadata.Id)}, "in_channel")
+		appMetadata.Name, appMetadata.Sku, appMetadata.BundleId, appMetadata.Id)})
 }
 
 func handleCurrentStatusCommand(user *User) SlackResponse {
 	appCurrentStatuses, err := getAppCurrentStatus(userAppleCredentials(user))
 	if err != nil {
-		return createSlackResponse([]string{"Could not find an app."}, "ephemeral")
+		return createEphemeralSlackResponse("Could not find an app.")
 	}
 
 	var slackMessages []string
@@ -114,113 +110,164 @@ func handleCurrentStatusCommand(user *User) SlackResponse {
 		slackMessages = append(slackMessages, channelMessage)
 	}
 
-	return createSlackResponse(slackMessages, "in_channel")
+	return createSlackResponse("Current Store Status for your app", slackMessages)
 }
 
 func handleBetaGroupsCommand(user *User) SlackResponse {
 	betaGroups, err := getBetaGroups(userAppleCredentials(user))
 	if err != nil {
-		return createSlackResponse([]string{"Could not find an app."}, "ephemeral")
+		return createEphemeralSlackResponse("Could not find an app.")
 	}
 
 	var slackMessages []string
 	for _, betaGroup := range betaGroups {
-		groupMessage := fmt.Sprintf("Group: %s\n", betaGroup.Name)
-		groupMessage += fmt.Sprintf("Internal: %t\n", betaGroup.Internal)
-		groupMessage += fmt.Sprintf("Testers: %d\n", len(betaGroup.Testers))
-		groupMessage += fmt.Sprintf("-----------")
+		groupType := "external"
+
+		if betaGroup.Internal == true {
+			groupType = "internal"
+		}
+		groupMessage := fmt.Sprintf("*%s* -- *%s* group with *%d* testers.", betaGroup.Name, groupType, len(betaGroup.Testers))
 		slackMessages = append(slackMessages, groupMessage)
 	}
 
-	return createSlackResponse(slackMessages, "in_channel")
+	return createSlackResponse("Test Groups", slackMessages)
+}
+
+func handleInflightReleaseCommand(user *User) SlackResponse {
+	appInfo, err := getAppMetadata(userAppleCredentials(user))
+	if err != nil {
+		return createEphemeralSlackResponse("Could not find your app.")
+	}
+	liveRelease, err := getInflightRelease(userAppleCredentials(user))
+	if err != nil {
+		return createEphemeralSlackResponse("Could not find an inflight release for your app.")
+	}
+
+	phasedReleaseEnabled := true
+
+	if liveRelease.PhasedRelease.Id == "" {
+		phasedReleaseEnabled = false
+	}
+
+	return createSlackResponse("Inflight Release",
+		[]string{
+			fmt.Sprintf(`Version: %s
+Build Number: %s
+Store Status: %s
+Phased Release Enabled: %t
+Release Type: %s`,
+				liveRelease.VersionName,
+				liveRelease.BuildNumber,
+				liveRelease.AppStoreState,
+				phasedReleaseEnabled,
+				liveRelease.ReleaseType),
+			fmt.Sprintf("<https://appstoreconnect.apple.com/apps/%s/appstore/ios/version/inflight|App Store Connect>", appInfo.Id)})
 }
 
 func handleLiveReleaseCommand(user *User) SlackResponse {
+	appInfo, err := getAppMetadata(userAppleCredentials(user))
+	if err != nil {
+		return createEphemeralSlackResponse("Could not find your app.")
+	}
 	liveRelease, err := getLiveRelease(userAppleCredentials(user))
 	if err != nil {
-		return createSlackResponse([]string{"Could not find an app."}, "ephemeral")
+		return createEphemeralSlackResponse("Could not find a live release for your app.")
 	}
 
-	return createSlackResponse([]string{fmt.Sprintf(`Live Release:
-Version: %s
-Build Number: %s
-Store Status: %s
-Phased Release Status: %s
-Phased Release Day: %d`,
-		liveRelease.VersionName,
-		liveRelease.BuildNumber,
-		liveRelease.AppStoreState,
-		liveRelease.PhasedRelease.PhasedReleaseState,
-		liveRelease.PhasedRelease.CurrentDayNumber)}, "in_channel")
+	return createSlackResponse("Live Release",
+		[]string{
+			fmt.Sprintf("*%s (%s)* is on day *%d* of phased release with status `%s`.",
+				liveRelease.VersionName,
+				liveRelease.BuildNumber,
+				liveRelease.PhasedRelease.CurrentDayNumber,
+				liveRelease.PhasedRelease.PhasedReleaseState),
+			fmt.Sprintf("<https://appstoreconnect.apple.com/apps/%s/appstore/ios/version/deliverable|App Store Connect>", appInfo.Id)})
 }
 
 func handlePauseReleaseCommand(user *User) SlackResponse {
+	appInfo, err := getAppMetadata(userAppleCredentials(user))
+	if err != nil {
+		return createEphemeralSlackResponse("Could not find your app.")
+	}
 	liveRelease, err := pauseLiveRelease(userAppleCredentials(user))
 	if err != nil {
-		return createSlackResponse([]string{"Could not find an live release to pause."}, "ephemeral")
+		return createEphemeralSlackResponse("Could not find an live release to pause.")
 	}
 
-	return createSlackResponse([]string{fmt.Sprintf(`Live Release:
-Version: %s
-Build Number: %s
-Store Status: %s
-Phased Release Status: %s
-Phased Release Day: %d`,
-		liveRelease.VersionName,
-		liveRelease.BuildNumber,
-		liveRelease.AppStoreState,
-		liveRelease.PhasedRelease.PhasedReleaseState,
-		liveRelease.PhasedRelease.CurrentDayNumber)}, "in_channel")
+	return createSlackResponse("Live Release",
+		[]string{
+			fmt.Sprintf("*%s (%s)* is on day *%d* of phased release with status `%s`.",
+				liveRelease.VersionName,
+				liveRelease.BuildNumber,
+				liveRelease.PhasedRelease.CurrentDayNumber,
+				liveRelease.PhasedRelease.PhasedReleaseState),
+			fmt.Sprintf("<https://appstoreconnect.apple.com/apps/%s/appstore/ios/version/deliverable|App Store Connect>", appInfo.Id)})
 }
 
 func handleResumeReleaseCommand(user *User) SlackResponse {
+	appInfo, err := getAppMetadata(userAppleCredentials(user))
+	if err != nil {
+		return createEphemeralSlackResponse("Could not find your app.")
+	}
 	liveRelease, err := resumeLiveRelease(userAppleCredentials(user))
 	if err != nil {
-		return createSlackResponse([]string{"Could not find an paused release to resume."}, "ephemeral")
+		return createEphemeralSlackResponse("Could not find an paused release to resume for your app.")
 	}
 
-	return createSlackResponse([]string{fmt.Sprintf(`Live Release:
-Version: %s
-Build Number: %s
-Store Status: %s
-Phased Release Status: %s
-Phased Release Day: %d`,
-		liveRelease.VersionName,
-		liveRelease.BuildNumber,
-		liveRelease.AppStoreState,
-		liveRelease.PhasedRelease.PhasedReleaseState,
-		liveRelease.PhasedRelease.CurrentDayNumber)}, "in_channel")
+	return createSlackResponse("Live Release",
+		[]string{
+			fmt.Sprintf("*%s (%s)* is on day *%d* of phased release with status `%s`.",
+				liveRelease.VersionName,
+				liveRelease.BuildNumber,
+				liveRelease.PhasedRelease.CurrentDayNumber,
+				liveRelease.PhasedRelease.PhasedReleaseState),
+			fmt.Sprintf("<https://appstoreconnect.apple.com/apps/%s/appstore/ios/version/deliverable|App Store Connect>", appInfo.Id)})
 }
 
 func handleReleaseToAllCommand(user *User) SlackResponse {
+	appInfo, err := getAppMetadata(userAppleCredentials(user))
+	if err != nil {
+		return createEphemeralSlackResponse("Could not find your app.")
+	}
 	liveRelease, err := releaseToAll(userAppleCredentials(user))
 	if err != nil {
-		return createSlackResponse([]string{"Could not find an live release to release to all."}, "ephemeral")
+		return createEphemeralSlackResponse("Could not find an live release to release to all for your app.")
 	}
 
-	return createSlackResponse([]string{fmt.Sprintf(`Live Release:
-Version: %s
-Build Number: %s
-Store Status: %s
-Phased Release Status: %s
-Phased Release Day: %d`,
-		liveRelease.VersionName,
-		liveRelease.BuildNumber,
-		liveRelease.AppStoreState,
-		liveRelease.PhasedRelease.PhasedReleaseState,
-		liveRelease.PhasedRelease.CurrentDayNumber)}, "in_channel")
+	return createSlackResponse("Live Release",
+		[]string{
+			fmt.Sprintf("*%s (%s)* is on day *%d* of phased release with status `%s`.",
+				liveRelease.VersionName,
+				liveRelease.BuildNumber,
+				liveRelease.PhasedRelease.CurrentDayNumber,
+				liveRelease.PhasedRelease.PhasedReleaseState),
+			fmt.Sprintf("<https://appstoreconnect.apple.com/apps/%s/appstore/ios/version/deliverable|App Store Connect>", appInfo.Id)})
 }
 
-func createSlackResponse(messages []string, responseType string) SlackResponse {
-	blocks := make([]SlackResponseText, len(messages))
+func createSlackResponse(header string, messages []string) SlackResponse {
+	blocks := make([]SlackResponseText, len(messages)+1)
+	blocks[0] = SlackResponseText{
+		Type: "header",
+		Text: SlackResponseInsideText{Type: "plain_text", Text: header},
+	}
 	for i, message := range messages {
-		blocks[i] = SlackResponseText{
+		blocks[i+1] = SlackResponseText{
 			Type: "section",
 			Text: SlackResponseInsideText{Type: "mrkdwn", Text: message},
 		}
 	}
 
-	return SlackResponse{Blocks: blocks, ResponseType: responseType}
+	return SlackResponse{Blocks: blocks, ResponseType: "in_channel"}
+}
+
+func createEphemeralSlackResponse(message string) SlackResponse {
+	blocks := make([]SlackResponseText, 1)
+	blocks[0] = SlackResponseText{
+		Type: "section",
+		Text: SlackResponseInsideText{Type: "plain_text", Text: message},
+	}
+
+	return SlackResponse{Blocks: blocks, ResponseType: "ephemeral"}
 }
 
 func userAppleCredentials(user *User) *AppleCredentials {
