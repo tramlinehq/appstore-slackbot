@@ -54,6 +54,45 @@ type AppCurrentStatus struct {
 	} `json:"builds"`
 }
 
+type BetaGroup struct {
+	Name     string `json:"name"`
+	Id       string `json:"id"`
+	Internal bool   `json:"internal"`
+	Testers  []struct {
+		Name  string `json:"name"`
+		Email string `json:"email"`
+	} `json:"testers"`
+}
+
+type Release struct {
+	Id                  string      `json:"id"`
+	VersionName         string      `json:"version_name"`
+	AppStoreState       string      `json:"app_store_state"`
+	ReleaseType         string      `json:"release_type"`
+	EarliestReleaseDate interface{} `json:"earliest_release_date"`
+	Downloadable        bool        `json:"downloadable"`
+	CreatedDate         time.Time   `json:"created_date"`
+	BuildNumber         string      `json:"build_number"`
+	BuildId             string      `json:"build_id"`
+	PhasedRelease       struct {
+		Id                 string    `json:"id"`
+		PhasedReleaseState string    `json:"phased_release_state"`
+		StartDate          time.Time `json:"start_date"`
+		TotalPauseDuration int       `json:"total_pause_duration"`
+		CurrentDayNumber   int       `json:"current_day_number"`
+	} `json:"phased_release"`
+	Details struct {
+		Id              string      `json:"id"`
+		Description     string      `json:"description"`
+		Locale          string      `json:"locale"`
+		Keywords        string      `json:"keywords"`
+		MarketingUrl    interface{} `json:"marketing_url"`
+		PromotionalText interface{} `json:"promotional_text"`
+		SupportUrl      string      `json:"support_url"`
+		WhatsNew        string      `json:"whats_new"`
+	} `json:"details"`
+}
+
 type SlackFormData struct {
 	Token          string `form:"token"`
 	TeamId         string `form:"team_id"`
@@ -85,3 +124,37 @@ type SlackResponse struct {
 	Blocks       []SlackResponseText `json:"blocks"`
 	ResponseType string              `json:"response_type"`
 }
+
+//type SlackModalResponse struct {
+//	Title struct {
+//		Type string `json:"type"`
+//		Text string `json:"text"`
+//	} `json:"title"`
+//	Submit struct {
+//		Type string `json:"type"`
+//		Text string `json:"text"`
+//	} `json:"submit"`
+//	Blocks []struct {
+//		Type    string `json:"type"`
+//		Element struct {
+//			Type        string `json:"type"`
+//			ActionId    string `json:"action_id"`
+//			Placeholder struct {
+//				Type string `json:"type"`
+//				Text string `json:"text"`
+//			} `json:"placeholder,omitempty"`
+//			Options []struct {
+//				Text struct {
+//					Type string `json:"type"`
+//					Text string `json:"text"`
+//				} `json:"text"`
+//				Value string `json:"value"`
+//			} `json:"options,omitempty"`
+//		} `json:"element"`
+//		Label struct {
+//			Type string `json:"type"`
+//			Text string `json:"text"`
+//		} `json:"label"`
+//	} `json:"blocks"`
+//	Type string `json:"type"`
+//}

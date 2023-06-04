@@ -85,6 +85,36 @@ func getAppCurrentStatus(credentials *AppleCredentials) ([]AppCurrentStatus, err
 	return appCurrentStatuses, err
 }
 
+func getBetaGroups(credentials *AppleCredentials) ([]BetaGroup, error) {
+	var betaGroups []BetaGroup
+
+	requestURL := fmt.Sprintf("%s/apple/connect/v1/apps/%s/groups", applelinkHost, credentials.BundleID)
+
+	body, err := applelinkGet(credentials, requestURL)
+	err = json.Unmarshal(body, &betaGroups)
+	if err != nil {
+		fmt.Printf("applelink: could not parse reponse body: %s\n", err)
+		return betaGroups, err
+	}
+
+	return betaGroups, err
+}
+
+func getLiveRelease(credentials *AppleCredentials) (Release, error) {
+	var liveRelease Release
+
+	requestURL := fmt.Sprintf("%s/apple/connect/v1/apps/%s/release/live", applelinkHost, credentials.BundleID)
+
+	body, err := applelinkGet(credentials, requestURL)
+	err = json.Unmarshal(body, &liveRelease)
+	if err != nil {
+		fmt.Printf("applelink: could not parse reponse body: %s\n", err)
+		return liveRelease, err
+	}
+
+	return liveRelease, err
+}
+
 func getApplelinkAuthToken(credentials ApplelinkCredentials) string {
 	expiry := time.Now().Add(10 * time.Minute)
 	claims := &jwt.RegisteredClaims{

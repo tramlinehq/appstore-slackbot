@@ -5,17 +5,24 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"regexp"
+	"strings"
 )
 
-var ValidSlackCommands = map[string]string{
-	"info":           "info",
-	"current_status": "current_status",
-	"live":           "live",
+var ValidSlackCommands = map[string]*regexp.Regexp{
+	"app_info":       regexp.MustCompile("app_info"),
+	"overall_status": regexp.MustCompile("overall_status"),
+	"beta_groups":    regexp.MustCompile("beta_groups"),
+	"live_release":   regexp.MustCompile("live_release"),
 }
 
 func handleSlackCommand(form SlackFormData, user *User) SlackResponse {
-	if command, ok := ValidSlackCommands[form.Text]; ok == true {
-		go handleValidSlackCommand(command, form.ResponseUrl, user)
+	fmt.Println("command", form.Command)
+	fmt.Println("text", form.Text)
+
+	command := strings.Split(form.Text, " ")[0]
+	if commandPattern, ok := ValidSlackCommands[command]; ok == true {
+		go handleValidSlackCommand(commandPattern, form.Text, form.ResponseUrl, user)
 		return createSlackResponse([]string{"Got it, working on it."}, "ephemeral")
 	}
 
@@ -23,19 +30,22 @@ func handleSlackCommand(form SlackFormData, user *User) SlackResponse {
 
 }
 
-func handleValidSlackCommand(command string, responseURL string, user *User) {
-	slackResponse := processValidSlackCommand(command, user)
+func handleValidSlackCommand(commandPattern *regexp.Regexp, command string, responseURL string, user *User) {
+	slackResponse := processValidSlackCommand(commandPattern, command, user)
 	sendResponseToSlack(responseURL, slackResponse)
 }
 
-func processValidSlackCommand(command string, user *User) SlackResponse {
-	switch command {
-	case "info":
+func processValidSlackCommand(commandPattern *regexp.Regexp, command string, user *User) SlackResponse {
+	matched := commandPattern.FindAllString(command, -1)
+	switch matched[0] {
+	case "app_info":
 		return handleInfoCommand(user)
-	case "current_status":
+	case "overall_status":
 		return handleCurrentStatusCommand(user)
-	case "live":
-		return createSlackResponse([]string{"Nothing *live* yet, _bruhahahaha_."}, "ephemeral")
+	case "beta_groups":
+		return handleBetaGroupsCommand(user)
+	case "live_release":
+		return handleLiveReleaseCommand(user)
 	default:
 		return createSlackResponse([]string{"Please input a valid command"}, "ephemeral")
 
@@ -96,6 +106,43 @@ func handleCurrentStatusCommand(user *User) SlackResponse {
 	}
 
 	return createSlackResponse(slackMessages, "in_channel")
+}
+
+func handleBetaGroupsCommand(user *User) SlackResponse {
+	betaGroups, err := getBetaGroups(userAppleCredentials(user))
+	if err != nil {
+		return createSlackResponse([]string{"Could not find an app."}, "ephemeral")
+	}
+
+	var slackMessages []string
+	for _, betaGroup := range betaGroups {
+		groupMessage := fmt.Sprintf("Group: %s\n", betaGroup.Name)
+		groupMessage += fmt.Sprintf("Internal: %t\n", betaGroup.Internal)
+		groupMessage += fmt.Sprintf("Testers: %d\n", len(betaGroup.Testers))
+		groupMessage += fmt.Sprintf("-----------")
+		slackMessages = append(slackMessages, groupMessage)
+	}
+
+	return createSlackResponse(slackMessages, "in_channel")
+}
+
+func handleLiveReleaseCommand(user *User) SlackResponse {
+	liveRelease, err := getLiveRelease(userAppleCredentials(user))
+	if err != nil {
+		return createSlackResponse([]string{"Could not find an app."}, "ephemeral")
+	}
+
+	return createSlackResponse([]string{fmt.Sprintf(`Live Release:
+Version: %s
+Build Number: %s
+Store Status: %s
+Phased Release Status: %s
+Phased Release Day: %d`,
+		liveRelease.VersionName,
+		liveRelease.BuildNumber,
+		liveRelease.AppStoreState,
+		liveRelease.PhasedRelease.PhasedReleaseState,
+		liveRelease.PhasedRelease.CurrentDayNumber)}, "in_channel")
 }
 
 func createSlackResponse(messages []string, responseType string) SlackResponse {
