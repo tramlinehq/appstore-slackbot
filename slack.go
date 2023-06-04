@@ -10,10 +10,12 @@ import (
 )
 
 var ValidSlackCommands = map[string]*regexp.Regexp{
-	"app_info":       regexp.MustCompile("app_info"),
-	"overall_status": regexp.MustCompile("overall_status"),
-	"beta_groups":    regexp.MustCompile("beta_groups"),
-	"live_release":   regexp.MustCompile("live_release"),
+	"app_info":            regexp.MustCompile("app_info"),
+	"overall_status":      regexp.MustCompile("overall_status"),
+	"beta_groups":         regexp.MustCompile("beta_groups"),
+	"live_release":        regexp.MustCompile("live_release"),
+	"pause_live_release":  regexp.MustCompile("pause_live_release"),
+	"resume_live_release": regexp.MustCompile("resume_live_release"),
 }
 
 func handleSlackCommand(form SlackFormData, user *User) SlackResponse {
@@ -46,6 +48,10 @@ func processValidSlackCommand(commandPattern *regexp.Regexp, command string, use
 		return handleBetaGroupsCommand(user)
 	case "live_release":
 		return handleLiveReleaseCommand(user)
+	case "pause_live_release":
+		return handlePauseReleaseCommand(user)
+	case "resume_live_release":
+		return handleResumeReleaseCommand(user)
 	default:
 		return createSlackResponse([]string{"Please input a valid command"}, "ephemeral")
 
@@ -130,6 +136,44 @@ func handleLiveReleaseCommand(user *User) SlackResponse {
 	liveRelease, err := getLiveRelease(userAppleCredentials(user))
 	if err != nil {
 		return createSlackResponse([]string{"Could not find an app."}, "ephemeral")
+	}
+
+	return createSlackResponse([]string{fmt.Sprintf(`Live Release:
+Version: %s
+Build Number: %s
+Store Status: %s
+Phased Release Status: %s
+Phased Release Day: %d`,
+		liveRelease.VersionName,
+		liveRelease.BuildNumber,
+		liveRelease.AppStoreState,
+		liveRelease.PhasedRelease.PhasedReleaseState,
+		liveRelease.PhasedRelease.CurrentDayNumber)}, "in_channel")
+}
+
+func handlePauseReleaseCommand(user *User) SlackResponse {
+	liveRelease, err := pauseLiveRelease(userAppleCredentials(user))
+	if err != nil {
+		return createSlackResponse([]string{"Could not find an live release to pause."}, "ephemeral")
+	}
+
+	return createSlackResponse([]string{fmt.Sprintf(`Live Release:
+Version: %s
+Build Number: %s
+Store Status: %s
+Phased Release Status: %s
+Phased Release Day: %d`,
+		liveRelease.VersionName,
+		liveRelease.BuildNumber,
+		liveRelease.AppStoreState,
+		liveRelease.PhasedRelease.PhasedReleaseState,
+		liveRelease.PhasedRelease.CurrentDayNumber)}, "in_channel")
+}
+
+func handleResumeReleaseCommand(user *User) SlackResponse {
+	liveRelease, err := resumeLiveRelease(userAppleCredentials(user))
+	if err != nil {
+		return createSlackResponse([]string{"Could not find an paused release to resume."}, "ephemeral")
 	}
 
 	return createSlackResponse([]string{fmt.Sprintf(`Live Release:

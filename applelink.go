@@ -13,9 +13,9 @@ import (
 	"time"
 )
 
-func applelinkGet(credentials *AppleCredentials, requestURL string) ([]byte, error) {
+func applelinkRequest(credentials *AppleCredentials, requestURL string, httpMethod string) ([]byte, error) {
 	var response []byte
-	req, err := http.NewRequest(http.MethodGet, requestURL, nil)
+	req, err := http.NewRequest(httpMethod, requestURL, nil)
 	if err != nil {
 		fmt.Printf("applelink: could not create request: %s\n", err)
 		return response, err
@@ -59,7 +59,7 @@ func getAppMetadata(credentials *AppleCredentials) (AppMetadata, error) {
 	appMetadata := AppMetadata{}
 
 	requestURL := fmt.Sprintf("%s/apple/connect/v1/apps/%s", applelinkHost, credentials.BundleID)
-	body, err := applelinkGet(credentials, requestURL)
+	body, err := applelinkRequest(credentials, requestURL, http.MethodGet)
 
 	err = json.Unmarshal(body, &appMetadata)
 	if err != nil {
@@ -75,7 +75,7 @@ func getAppCurrentStatus(credentials *AppleCredentials) ([]AppCurrentStatus, err
 
 	requestURL := fmt.Sprintf("%s/apple/connect/v1/apps/%s/current_status", applelinkHost, credentials.BundleID)
 
-	body, err := applelinkGet(credentials, requestURL)
+	body, err := applelinkRequest(credentials, requestURL, http.MethodGet)
 	err = json.Unmarshal(body, &appCurrentStatuses)
 	if err != nil {
 		fmt.Printf("applelink: could not parse reponse body: %s\n", err)
@@ -90,7 +90,7 @@ func getBetaGroups(credentials *AppleCredentials) ([]BetaGroup, error) {
 
 	requestURL := fmt.Sprintf("%s/apple/connect/v1/apps/%s/groups", applelinkHost, credentials.BundleID)
 
-	body, err := applelinkGet(credentials, requestURL)
+	body, err := applelinkRequest(credentials, requestURL, http.MethodGet)
 	err = json.Unmarshal(body, &betaGroups)
 	if err != nil {
 		fmt.Printf("applelink: could not parse reponse body: %s\n", err)
@@ -105,7 +105,37 @@ func getLiveRelease(credentials *AppleCredentials) (Release, error) {
 
 	requestURL := fmt.Sprintf("%s/apple/connect/v1/apps/%s/release/live", applelinkHost, credentials.BundleID)
 
-	body, err := applelinkGet(credentials, requestURL)
+	body, err := applelinkRequest(credentials, requestURL, http.MethodGet)
+	err = json.Unmarshal(body, &liveRelease)
+	if err != nil {
+		fmt.Printf("applelink: could not parse reponse body: %s\n", err)
+		return liveRelease, err
+	}
+
+	return liveRelease, err
+}
+
+func pauseLiveRelease(credentials *AppleCredentials) (Release, error) {
+	var liveRelease Release
+
+	requestURL := fmt.Sprintf("%s/apple/connect/v1/apps/%s/release/live/rollout/pause", applelinkHost, credentials.BundleID)
+
+	body, err := applelinkRequest(credentials, requestURL, http.MethodPatch)
+	err = json.Unmarshal(body, &liveRelease)
+	if err != nil {
+		fmt.Printf("applelink: could not parse reponse body: %s\n", err)
+		return liveRelease, err
+	}
+
+	return liveRelease, err
+}
+
+func resumeLiveRelease(credentials *AppleCredentials) (Release, error) {
+	var liveRelease Release
+
+	requestURL := fmt.Sprintf("%s/apple/connect/v1/apps/%s/release/live/rollout/resume", applelinkHost, credentials.BundleID)
+
+	body, err := applelinkRequest(credentials, requestURL, http.MethodPatch)
 	err = json.Unmarshal(body, &liveRelease)
 	if err != nil {
 		fmt.Printf("applelink: could not parse reponse body: %s\n", err)
