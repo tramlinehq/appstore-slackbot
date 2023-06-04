@@ -213,6 +213,48 @@ func handleLogout() gin.HandlerFunc {
 	}
 }
 
+func handleDeleteUser() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		userValue, _ := c.Get("user")
+		user, _ := userValue.(*User)
+		tx := db.Begin()
+		result := tx.Delete(&user)
+		if result.Error != nil {
+			tx.Rollback()
+			c.AbortWithError(http.StatusInternalServerError, result.Error)
+			return
+		}
+
+		var metrics Metrics
+		result = tx.First(&metrics)
+		if result.Error != nil {
+			metrics = Metrics{
+				ID:           1,
+				DeletedUsers: 1,
+			}
+			result = tx.Create(&metrics)
+		} else {
+			metrics.DeletedUsers += 1
+			result = tx.Save(metrics)
+		}
+
+		if result.Error != nil {
+			tx.Rollback()
+			c.AbortWithError(http.StatusInternalServerError, result.Error)
+			return
+		}
+
+		tx.Commit()
+
+		// Clear the authorized user from the session
+		session := sessions.Default(c)
+		session.Delete(authorizedUserKey)
+		session.Save()
+
+		c.Redirect(http.StatusFound, "/")
+	}
+}
+
 func handleSlackCommands() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		signature := c.GetHeader("X-Slack-Signature")

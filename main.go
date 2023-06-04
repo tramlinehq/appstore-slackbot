@@ -80,6 +80,7 @@ func initDB(name string) *gorm.DB {
 		panic(err)
 	}
 	db.AutoMigrate(&User{})
+	db.AutoMigrate(&Metrics{})
 
 	return db
 }
@@ -136,6 +137,7 @@ func initServer(db *gorm.DB) {
 	r.GET("/auth/slack/start", handleSlackAuth())
 	r.GET("/auth/slack/callback", getUserFromSessionMiddleware(), handleSlackAuthCallback())
 	r.POST("/auth/apple", getUserFromSessionMiddleware(), handleAppStoreCreds())
+	r.POST("/user/delete", getUserFromSessionMiddleware(), handleDeleteUser())
 	r.GET("/ping", handlePing())
 	r.POST("/slack/listen", handleSlackCommands())
 

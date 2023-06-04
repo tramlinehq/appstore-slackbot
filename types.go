@@ -21,6 +21,12 @@ type User struct {
 	AppStoreConnected bool `gorm:"default:false"`
 	AppStoreP8File    []byte
 	AppStoreP8FileIV  []byte
+	CommandCount      int64
+}
+
+type Metrics struct {
+	ID           int8 `gorm:"primary_key"`
+	DeletedUsers int64
 }
 
 type AppleCredentials struct {

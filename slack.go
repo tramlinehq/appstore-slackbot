@@ -23,6 +23,8 @@ var ValidSlackCommands = map[string]string{
 func handleSlackCommand(form SlackFormData, user *User) SlackResponse {
 	command := strings.Split(form.Text, " ")[0]
 	if _, ok := ValidSlackCommands[command]; ok == true {
+		user.CommandCount += 1
+		db.Save(&user)
 		go handleValidSlackCommand(command, form.ResponseUrl, user)
 		return createEphemeralSlackResponse(fmt.Sprintf("Got %s command, working on it.", command))
 	}

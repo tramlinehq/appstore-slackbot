@@ -76,6 +76,12 @@
       {{ end }}
     </main>
     <footer>
+      <article>
+        <p>You can remove your data from our system anytime you want, we do not retain any data after your account is removed.</p>
+        <form action="/user/delete" method="POST" onsubmit="return confirm('Do you really want to remove your account?');">
+          <button type="submit">Delete data and remove account</button>
+        </form>
+      </article>
       <p>
         powered by <a href="https://www.tramline.app">Tramline</a>
         •
