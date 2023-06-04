@@ -138,29 +138,24 @@ func handleInflightReleaseCommand(user *User) SlackResponse {
 	if err != nil {
 		return createEphemeralSlackResponse("Could not find your app.")
 	}
-	liveRelease, err := getInflightRelease(userAppleCredentials(user))
+	inflightRelease, err := getInflightRelease(userAppleCredentials(user))
 	if err != nil {
 		return createEphemeralSlackResponse("Could not find an inflight release for your app.")
 	}
 
-	phasedReleaseEnabled := true
+	phasedReleaseEnabled := "on"
 
-	if liveRelease.PhasedRelease.Id == "" {
-		phasedReleaseEnabled = false
+	if inflightRelease.PhasedRelease.Id == "" {
+		phasedReleaseEnabled = "off"
 	}
 
 	return createSlackResponse("Inflight Release",
 		[]string{
-			fmt.Sprintf(`Version: %s
-Build Number: %s
-Store Status: %s
-Phased Release Enabled: %t
-Release Type: %s`,
-				liveRelease.VersionName,
-				liveRelease.BuildNumber,
-				liveRelease.AppStoreState,
-				phasedReleaseEnabled,
-				liveRelease.ReleaseType),
+			fmt.Sprintf("Next up for release is *%s (%s)* with current status `%s`.",
+				inflightRelease.VersionName,
+				inflightRelease.BuildNumber,
+				inflightRelease.AppStoreState),
+			fmt.Sprintf("The release type is `%s` and phased release is turned *%s*.", inflightRelease.ReleaseType, phasedReleaseEnabled),
 			fmt.Sprintf("<https://appstoreconnect.apple.com/apps/%s/appstore/ios/version/inflight|App Store Connect>", appInfo.Id)})
 }
 
