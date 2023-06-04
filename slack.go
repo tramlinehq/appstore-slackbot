@@ -14,7 +14,7 @@ var ValidSlackCommands = map[string]string{
 	"overall_status":      "🏪 Get an overall store status for your app, what builds are distributed to which channels (TestFlight and AppStore)",
 	"beta_groups":         "🧪 List all the beta groups present in TestFlight",
 	"inflight_release":    "🛫 Get the current inflight release in the App Store",
-	"live_release":        "📱Get the current live release in the App Store",
+	"live_release":        "📱 Get the current live release in the App Store",
 	"pause_live_release":  "⏸️ Pause the phased release of the current live release in the App Store",
 	"resume_live_release": "▶️ Resume the phased release of the current live release in the App Store",
 	"release_to_all":      "🎢 Release the current live release in the App Store to all users",
