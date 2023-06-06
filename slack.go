@@ -21,6 +21,9 @@ var ValidSlackCommands = map[string]string{
 }
 
 func handleSlackCommand(form SlackFormData, user *User) SlackResponse {
+	if !user.AppStoreBundleID.Valid {
+		return createEphemeralSlackResponse(fmt.Sprintf("No iOS app registered. Please add ASC details to use appstoreslackbot."))
+	}
 	command := strings.Split(form.Text, " ")[0]
 	if _, ok := ValidSlackCommands[command]; ok == true {
 		user.CommandCount += 1
