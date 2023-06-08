@@ -1,6 +1,6 @@
 export const metadata = {
-    title: 'Home - Simple',
-    description: 'Page description',
+    title: 'App Store Slackbot',
+    description: 'Talk to the App Store directly from your Slack workspace.',
 }
 
 import Hero from '@/components/hero'
