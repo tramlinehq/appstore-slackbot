@@ -60,7 +60,7 @@ module.exports = {
         '1/1': '100%',
       },
       fontFamily: {
-        inter: ['Rubik', 'Inter', 'sans-serif']
+        inter: ['Sarabun', 'Inter', 'sans-serif']
       },
       fontSize: {
         xs: '0.75rem',
