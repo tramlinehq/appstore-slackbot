@@ -13,17 +13,17 @@ export default function Hero() {
                             <span className="text-[#4A154B]">Slackbot</span>
                         </h1>
                         <div className="max-w-3xl mx-auto">
-                            <p className="max-w-md mx-auto text-base text-black sm:text-lg md:my-8 md:text-2xl md:max-w-3xl font-light" data-aos="zoom-y-out" data-aos-delay="150">
+                            <p className="max-w-md mx-auto text-base text-black sm:text-lg md:my-8 md:text-2xl md:max-w-3xl" data-aos="zoom-y-out" data-aos-delay="50">
                                 Talk to the App Store directly from your Slack workspace.
                             </p>
                             <div className="max-w-xs mx-auto sm:max-w-none sm:flex sm:justify-center"
-                                 data-aos="zoom-y-out" data-aos-delay="300">
-                                <div>
-                                    <a className="btn text-white bg-[#4A154B] opacity-90 hover:opacity-100 w-full mb-4 sm:w-auto sm:mb-0"
+                                 data-aos="zoom-y-out" data-aos-delay="100">
+                                <div className="shadow-lg">
+                                    <a className="btn text-white bg-[#4A154B] opacity-90 hover:opacity-100 w-full mb-4 sm:w-auto sm:mb-0 font-bold"
                                        href="https://ciderbot.onrender.com">Get Started</a>
                                 </div>
-                                <div>
-                                    <a className="btn text-white bg-gray-900 hover:bg-gray-800 w-full sm:w-auto sm:ml-4"
+                                <div className="shadow-lg">
+                                    <a className="btn text-white bg-gray-900 hover:bg-gray-800 w-full sm:w-auto sm:ml-4 font-bold"
                                        href="#questions">Questions?</a>
                                 </div>
                             </div>

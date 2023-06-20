@@ -1,15 +1,14 @@
 import './css/style.css'
 
-import {Inter} from 'next/font/google'
+import {Urbanist} from 'next/font/google'
 
-const inter = Inter({
+const urbanist = Urbanist({
     subsets: ['latin'],
-    variable: '--font-inter',
-    display: 'swap'
+    variable: '--font-urbanist',
+    display: 'swap',
 })
-
 export const metadata = {
-    title: 'App Store Slackbot',
+    title: 'App Store → Slackbot',
     description: 'Talk to the App Store directly from your Slack workspace.',
 }
 
@@ -19,14 +18,15 @@ export default function RootLayout({children,}: {
     return (
         <html lang="en">
         <head>
-            <link rel="preconnect" href="https://fonts.googleapis.com"/>
-            <link rel="preconnect" href="https://fonts.gstatic.com"/>
-            <link
-                href="https://fonts.googleapis.com/css2?family=Sarabun:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400;1,500&display=swap"
-                rel="stylesheet"/>
+            <link rel="preconnect" href="https://stijndv.com"/>
+            <link rel="stylesheet" href="https://stijndv.com/fonts/Eudoxus-Sans.css"/>
+            <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png"/>
+            <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png"/>
+            <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png"/>
+            <link rel="manifest" href="/site.webmanifest"/>
         </head>
         <body
-            className={`${inter.variable} font-inter antialiased bg-white text-gray-900 tracking-tight cover-gradient`}>
+            className={`${urbanist.className} antialiased bg-white text-gray-900 tracking-tight cover-gradient`}>
         <div className="flex flex-col min-h-screen overflow-hidden supports-[overflow:clip]:overflow-clip">
             {children}
         </div>

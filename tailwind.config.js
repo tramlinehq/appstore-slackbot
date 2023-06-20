@@ -60,7 +60,8 @@ module.exports = {
         '1/1': '100%',
       },
       fontFamily: {
-        inter: ['Sarabun', 'Inter', 'sans-serif']
+        exodus: ['Eudoxus Sans', 'sans-serif'],
+        urbanist: ['Urbanist', 'sans-serif'],
       },
       fontSize: {
         xs: '0.75rem',
