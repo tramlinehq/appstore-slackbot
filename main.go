@@ -1,7 +1,12 @@
 package main
 
 import (
+	"ciderbot/types"
 	"fmt"
+	"log"
+	"net/http"
+	"os"
+
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-contrib/sessions/cookie"
 	"github.com/gin-gonic/gin"
@@ -10,9 +15,6 @@ import (
 	"golang.org/x/oauth2/google"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
-	"log"
-	"net/http"
-	"os"
 )
 
 const (
@@ -42,7 +44,7 @@ var (
 	applelinkAuthAud       string
 	applelinkAuthIssuer    string
 	applelinkAuthSecret    string
-	applelinkCredentials   *ApplelinkCredentials
+	applelinkCredentials   *types.ApplelinkCredentials
 	applelinkHost          string
 )
 
@@ -79,8 +81,8 @@ func initDB(name string) *gorm.DB {
 	if err != nil {
 		panic(err)
 	}
-	db.AutoMigrate(&User{})
-	db.AutoMigrate(&Metrics{})
+	db.AutoMigrate(&types.User{})
+	db.AutoMigrate(&types.Metrics{})
 
 	return db
 }
@@ -112,7 +114,7 @@ func initSlackOAuthConf() {
 }
 
 func initApplelinkCreds() {
-	applelinkCredentials = &ApplelinkCredentials{
+	applelinkCredentials = &types.ApplelinkCredentials{
 		Aud:    applelinkAuthAud,
 		Issuer: applelinkAuthIssuer,
 		Secret: applelinkAuthSecret,
@@ -142,7 +144,7 @@ func initServer(db *gorm.DB) {
 	r.POST("/slack/listen", handleSlackCommands())
 
 	r.Static("/assets", "./assets")
-	r.LoadHTMLGlob("templates/*")
+	r.LoadHTMLGlob("templates/html/*")
 
 	var err error
 	if appEnv == "production" {

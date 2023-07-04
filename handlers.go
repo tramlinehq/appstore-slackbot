@@ -1,6 +1,7 @@
 package main
 
 import (
+	"ciderbot/types"
 	"crypto/aes"
 	"crypto/hmac"
 	"crypto/rand"
@@ -9,16 +10,17 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
-	"github.com/gin-contrib/sessions"
-	"github.com/gin-gonic/gin"
-	"golang.org/x/oauth2"
-	"gorm.io/gorm"
-	"gorm.io/gorm/clause"
 	"io"
 	"net/http"
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/gin-contrib/sessions"
+	"github.com/gin-gonic/gin"
+	"golang.org/x/oauth2"
+	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 )
 
 func handleAppStoreCreds() gin.HandlerFunc {
@@ -66,7 +68,7 @@ func handleAppStoreCreds() gin.HandlerFunc {
 		encryptedP8File := encrypt(p8FileBytes, []byte(encryptionKey), iv)
 
 		userValue, _ := c.Get("user")
-		user, _ := userValue.(*User)
+		user, _ := userValue.(*types.User)
 		user.AppStoreKeyID = sql.NullString{String: keyID, Valid: true}
 		user.AppStoreBundleID = sql.NullString{String: bundleID, Valid: true}
 		user.AppStoreIssuerID = sql.NullString{String: issuerID, Valid: true}
@@ -106,7 +108,7 @@ func handleSlackAuthCallback() gin.HandlerFunc {
 		slackTeamName := team["name"].(string)
 
 		userValue, _ := c.Get("user")
-		user, _ := userValue.(*User)
+		user, _ := userValue.(*types.User)
 		user.SlackAccessToken = sql.NullString{String: token.AccessToken, Valid: true}
 		user.SlackRefreshToken = sql.NullString{String: token.RefreshToken, Valid: true}
 		user.SlackTeamID = sql.NullString{String: slackTeamID, Valid: true}
@@ -170,7 +172,7 @@ func handleGoogleCallback(db *gorm.DB) gin.HandlerFunc {
 		}
 
 		// Save the authorized user to the database
-		user := User{
+		user := types.User{
 			Provider:   "google",
 			ProviderID: profile.ID,
 			Email:      profile.Email,
@@ -216,7 +218,7 @@ func handleLogout() gin.HandlerFunc {
 func handleDeleteUser() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		userValue, _ := c.Get("user")
-		user, _ := userValue.(*User)
+		user, _ := userValue.(*types.User)
 		tx := db.Begin()
 		result := tx.Delete(&user)
 		if result.Error != nil {
@@ -225,10 +227,10 @@ func handleDeleteUser() gin.HandlerFunc {
 			return
 		}
 
-		var metrics Metrics
+		var metrics types.Metrics
 		result = tx.First(&metrics)
 		if result.Error != nil {
-			metrics = Metrics{
+			metrics = types.Metrics{
 				ID:           1,
 				DeletedUsers: 1,
 			}
@@ -268,7 +270,7 @@ func handleSlackCommands() gin.HandlerFunc {
 		}
 		c.Request.Body = io.NopCloser(strings.NewReader(string(body)))
 
-		var form SlackFormData
+		var form types.SlackFormData
 		if err := c.ShouldBind(&form); err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			return
@@ -303,7 +305,7 @@ func handleSlackCommands() gin.HandlerFunc {
 	}
 }
 
-func getUserFromSession(c *gin.Context) (*User, error) {
+func getUserFromSession(c *gin.Context) (*types.User, error) {
 	session := sessions.Default(c)
 	email := session.Get(authorizedUserKey)
 
@@ -311,7 +313,7 @@ func getUserFromSession(c *gin.Context) (*User, error) {
 		return nil, fmt.Errorf("no user found")
 	}
 
-	var user User
+	var user types.User
 	result := db.Where("email = ?", email).First(&user)
 	if result.Error != nil {
 		return nil, result.Error
@@ -320,8 +322,8 @@ func getUserFromSession(c *gin.Context) (*User, error) {
 	return &user, nil
 }
 
-func getUserByTeamID(teamID string) *User {
-	var user User
+func getUserByTeamID(teamID string) *types.User {
+	var user types.User
 	db.Where("slack_team_id = ?", teamID).First(&user)
 
 	return &user
@@ -369,7 +371,7 @@ func verifyRequestSignature(signature, timestamp string, body []byte) bool {
 }
 
 func validateAppStoreCreds(bundleID string, issuerID string, keyID string, p8FileBytes []byte) error {
-	appleCredentials := AppleCredentials{
+	appleCredentials := types.AppleCredentials{
 		BundleID: bundleID,
 		IssuerID: issuerID,
 		KeyID:    keyID,

@@ -1,19 +1,21 @@
 package main
 
 import (
+	"ciderbot/types"
 	"crypto/ecdsa"
 	"crypto/x509"
 	"encoding/json"
 	"encoding/pem"
 	"errors"
 	"fmt"
-	"github.com/golang-jwt/jwt/v5"
 	"io"
 	"net/http"
 	"time"
+
+	"github.com/golang-jwt/jwt/v5"
 )
 
-func applelinkRequest(credentials *AppleCredentials, requestURL string, httpMethod string) ([]byte, error) {
+func applelinkRequest(credentials *types.AppleCredentials, requestURL string, httpMethod string) ([]byte, error) {
 	var response []byte
 	req, err := http.NewRequest(httpMethod, requestURL, nil)
 	if err != nil {
@@ -55,8 +57,8 @@ func applelinkRequest(credentials *AppleCredentials, requestURL string, httpMeth
 
 }
 
-func getAppMetadata(credentials *AppleCredentials) (AppMetadata, error) {
-	appMetadata := AppMetadata{}
+func getAppMetadata(credentials *types.AppleCredentials) (types.AppMetadata, error) {
+	appMetadata := types.AppMetadata{}
 
 	requestURL := fmt.Sprintf("%s/apple/connect/v1/apps/%s", applelinkHost, credentials.BundleID)
 	body, err := applelinkRequest(credentials, requestURL, http.MethodGet)
@@ -70,8 +72,8 @@ func getAppMetadata(credentials *AppleCredentials) (AppMetadata, error) {
 	return appMetadata, err
 }
 
-func getAppCurrentStatus(credentials *AppleCredentials) ([]AppCurrentStatus, error) {
-	var appCurrentStatuses []AppCurrentStatus
+func getAppCurrentStatus(credentials *types.AppleCredentials) ([]types.AppCurrentStatus, error) {
+	var appCurrentStatuses []types.AppCurrentStatus
 
 	requestURL := fmt.Sprintf("%s/apple/connect/v1/apps/%s/current_status", applelinkHost, credentials.BundleID)
 
@@ -85,8 +87,8 @@ func getAppCurrentStatus(credentials *AppleCredentials) ([]AppCurrentStatus, err
 	return appCurrentStatuses, err
 }
 
-func getBetaGroups(credentials *AppleCredentials) ([]BetaGroup, error) {
-	var betaGroups []BetaGroup
+func getBetaGroups(credentials *types.AppleCredentials) ([]types.BetaGroup, error) {
+	var betaGroups []types.BetaGroup
 
 	requestURL := fmt.Sprintf("%s/apple/connect/v1/apps/%s/groups", applelinkHost, credentials.BundleID)
 
@@ -100,8 +102,8 @@ func getBetaGroups(credentials *AppleCredentials) ([]BetaGroup, error) {
 	return betaGroups, err
 }
 
-func getInflightRelease(credentials *AppleCredentials) (Release, error) {
-	var inflightRelease Release
+func getInflightRelease(credentials *types.AppleCredentials) (types.Release, error) {
+	var inflightRelease types.Release
 
 	requestURL := fmt.Sprintf("%s/apple/connect/v1/apps/%s/release", applelinkHost, credentials.BundleID)
 
@@ -115,8 +117,8 @@ func getInflightRelease(credentials *AppleCredentials) (Release, error) {
 	return inflightRelease, err
 }
 
-func getLiveRelease(credentials *AppleCredentials) (Release, error) {
-	var liveRelease Release
+func getLiveRelease(credentials *types.AppleCredentials) (types.Release, error) {
+	var liveRelease types.Release
 
 	requestURL := fmt.Sprintf("%s/apple/connect/v1/apps/%s/release/live", applelinkHost, credentials.BundleID)
 
@@ -130,8 +132,8 @@ func getLiveRelease(credentials *AppleCredentials) (Release, error) {
 	return liveRelease, err
 }
 
-func pauseLiveRelease(credentials *AppleCredentials) (Release, error) {
-	var liveRelease Release
+func pauseLiveRelease(credentials *types.AppleCredentials) (types.Release, error) {
+	var liveRelease types.Release
 
 	requestURL := fmt.Sprintf("%s/apple/connect/v1/apps/%s/release/live/rollout/pause", applelinkHost, credentials.BundleID)
 
@@ -145,8 +147,8 @@ func pauseLiveRelease(credentials *AppleCredentials) (Release, error) {
 	return liveRelease, err
 }
 
-func resumeLiveRelease(credentials *AppleCredentials) (Release, error) {
-	var liveRelease Release
+func resumeLiveRelease(credentials *types.AppleCredentials) (types.Release, error) {
+	var liveRelease types.Release
 
 	requestURL := fmt.Sprintf("%s/apple/connect/v1/apps/%s/release/live/rollout/resume", applelinkHost, credentials.BundleID)
 
@@ -160,8 +162,8 @@ func resumeLiveRelease(credentials *AppleCredentials) (Release, error) {
 	return liveRelease, err
 }
 
-func releaseToAll(credentials *AppleCredentials) (Release, error) {
-	var liveRelease Release
+func releaseToAll(credentials *types.AppleCredentials) (types.Release, error) {
+	var liveRelease types.Release
 
 	requestURL := fmt.Sprintf("%s/apple/connect/v1/apps/%s/release/live/rollout/complete", applelinkHost, credentials.BundleID)
 
@@ -175,7 +177,7 @@ func releaseToAll(credentials *AppleCredentials) (Release, error) {
 	return liveRelease, err
 }
 
-func getApplelinkAuthToken(credentials ApplelinkCredentials) string {
+func getApplelinkAuthToken(credentials types.ApplelinkCredentials) string {
 	expiry := time.Now().Add(10 * time.Minute)
 	claims := &jwt.RegisteredClaims{
 		Audience:  jwt.ClaimStrings{credentials.Aud},
@@ -189,7 +191,7 @@ func getApplelinkAuthToken(credentials ApplelinkCredentials) string {
 	return signedToken
 }
 
-func getAppStoreToken(credentials *AppleCredentials) (string, error) {
+func getAppStoreToken(credentials *types.AppleCredentials) (string, error) {
 	expiry := time.Now().Add(10 * time.Minute)
 
 	claims := &jwt.RegisteredClaims{

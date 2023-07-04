@@ -1,4 +1,4 @@
-package main
+package types
 
 import (
 	"database/sql"
@@ -116,18 +116,26 @@ type SlackFormData struct {
 	ApiAppId       string `form:"api_app_id"`
 }
 
-type SlackResponseInsideText struct {
+type SlackResponse struct {
+	Blocks       []Block `json:"blocks"`
+	ResponseType string  `json:"response_type"`
+}
+
+type Block struct {
+	Type     string    `json:"type"`
+	Text     Text      `json:"text,omitempty"`
+	Fields   []Text    `json:"fields,omitempty"`
+	Elements []Element `json:"elements,omitempty"`
+}
+
+type Text struct {
 	Type string `json:"type"`
 	Text string `json:"text"`
 }
 
-type SlackResponseText struct {
-	Type   string                    `json:"type"`
-	Text   SlackResponseInsideText   `json:"text"`
-	Fields []SlackResponseInsideText `json:"fields,omitempty"`
-}
-
-type SlackResponse struct {
-	Blocks       []SlackResponseText `json:"blocks"`
-	ResponseType string              `json:"response_type"`
+type Element struct {
+	Type     string `json:"type"`
+	ImageURL string `json:"image_url,omitempty"`
+	AltText  string `json:"alt_text,omitempty"`
+	Text     string `json:"text,omitempty"`
 }
