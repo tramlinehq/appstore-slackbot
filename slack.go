@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"net/http"
 	"strings"
+	"time"
 )
 
 var ValidSlackCommands = map[string][2]string{
@@ -48,22 +49,22 @@ func processValidSlackCommand(command string, user *types.User) types.SlackRespo
 		return handleHelpCommand(user)
 	case "app_info":
 		return handleInfoCommand(user)
-	// case "overall_status":
-	// 	return handleCurrentStatusCommand(user)
-	// case "beta_groups":
-	// 	return handleBetaGroupsCommand(user)
-	// case "inflight_release":
-	// 	return handleInflightReleaseCommand(user)
-	// case "live_release":
-	// 	return handleLiveReleaseCommand(user)
-	// case "pause_live_release":
-	// 	return handlePauseReleaseCommand(user)
-	// case "resume_live_release":
-	// 	return handleResumeReleaseCommand(user)
-	// case "release_to_all":
-	// 	return handleReleaseToAllCommand(user)
+	case "live_release":
+		return handleLiveReleaseCommand(user)
+	case "overall_status":
+		return handleCurrentStatusCommand(user)
+	case "beta_groups":
+		return handleBetaGroupsCommand(user)
+	case "inflight_release":
+		return handleInflightReleaseCommand(user)
+	case "pause_live_release":
+		return handlePauseReleaseCommand(user)
+	case "resume_live_release":
+		return handleResumeReleaseCommand(user)
+	case "release_to_all":
+		return handleReleaseToAllCommand(user)
 	default:
-		return slack.EphemeralMessage{Msg: "Please input a valid command"}.Render()
+		return slack.EphemeralMessage{Msg: "Please input a valid command!"}.Render()
 	}
 }
 
@@ -74,7 +75,7 @@ func handleHelpCommand(_user *types.User) types.SlackResponse {
 func handleInfoCommand(user *types.User) types.SlackResponse {
 	appMetadata, err := getAppMetadata(userAppleCredentials(user))
 	if err != nil {
-		return slack.EphemeralMessage{Msg: "Could not find an app"}.Render()
+		return slack.EphemeralMessage{Msg: "Could not find an app."}.Render()
 	}
 
 	return slack.AppInfo{
@@ -85,165 +86,164 @@ func handleInfoCommand(user *types.User) types.SlackResponse {
 	}.Render()
 }
 
-// func handleCurrentStatusCommand(user *types.User) types.SlackResponse {
-// 	appCurrentStatuses, err := getAppCurrentStatus(userAppleCredentials(user))
-// 	if err != nil {
-// 		return slack.EphemeralMessage{Msg: "Could not find an app"}.Render()
-// 	}
+func handleLiveReleaseCommand(user *types.User) types.SlackResponse {
+	appInfo, err := getAppMetadata(userAppleCredentials(user))
+	if err != nil {
+		return slack.EphemeralMessage{Msg: "Could not find your app."}.Render()
+	}
 
-// 	var slackMessages []string
-// 	for _, appCurrentStatus := range appCurrentStatuses {
-// 		channelMessage := fmt.Sprintf("Channel: %s\n", appCurrentStatus.Name)
-// 		for _, build := range appCurrentStatus.Builds {
-// 			channelMessage += fmt.Sprintf("Build: %s (%s) - %s - %s\n", build.VersionString, build.BuildNumber, build.Status, build.ReleaseDate)
-// 		}
-// 		slackMessages = append(slackMessages, channelMessage)
-// 	}
+	liveRelease, err := getLiveRelease(userAppleCredentials(user))
 
-// 	return createSlackResponse("Current Store Status for your app", slackMessages)
-// }
+	if err != nil {
+		return slack.EphemeralMessage{Msg: "Could not find a live release for your app."}.Render()
+	}
 
-// func handleBetaGroupsCommand(user *types.User) types.SlackResponse {
-// 	betaGroups, err := getBetaGroups(userAppleCredentials(user))
-// 	if err != nil {
-// 		return slack.EphemeralMessage{Msg: "Could not find an app"}.Render()
-// 	}
+	return slack.LiveRelease{
+		AppId:               appInfo.Id,
+		Version:             liveRelease.VersionName,
+		BuildNumber:         liveRelease.BuildNumber,
+		PhasedReleaseStatus: liveRelease.PhasedRelease.CurrentDayNumber,
+		ReleaseStatus:       liveRelease.PhasedRelease.PhasedReleaseState,
+	}.Render()
+}
 
-// 	var slackMessages []string
-// 	for _, betaGroup := range betaGroups {
-// 		groupType := "external"
+func handleCurrentStatusCommand(user *types.User) types.SlackResponse {
+	appCurrentStatuses, err := getAppCurrentStatus(userAppleCredentials(user))
+	if err != nil {
+		return slack.EphemeralMessage{Msg: "Could not find an app."}.Render()
+	}
 
-// 		if betaGroup.Internal == true {
-// 			groupType = "internal"
-// 		}
-// 		groupMessage := fmt.Sprintf("*%s* -- *%s* group with *%d* testers.", betaGroup.Name, groupType, len(betaGroup.Testers))
-// 		slackMessages = append(slackMessages, groupMessage)
-// 	}
+	storeStatus := slack.CurrentStoreStatus{}
 
-// 	return createSlackResponse("Test Groups", slackMessages)
-// }
+	for _, channelStatus := range appCurrentStatuses {
+		channel := struct {
+			Name   string `json:"name"`
+			Builds []struct {
+				Id            string    `json:"id"`
+				BuildNumber   string    `json:"build_number"`
+				Status        string    `json:"status"`
+				VersionString string    `json:"version_string"`
+				ReleaseDate   time.Time `json:"release_date"`
+			} `json:"builds"`
+		}{
+			Name:   channelStatus.Name,
+			Builds: channelStatus.Builds,
+		}
 
-// func handleInflightReleaseCommand(user *types.User) types.SlackResponse {
-// 	appInfo, err := getAppMetadata(userAppleCredentials(user))
-// 	if err != nil {
-// 		return slack.EphemeralMessage{Msg: "Could not find your app"}.Render()
-// 	}
-// 	inflightRelease, err := getInflightRelease(userAppleCredentials(user))
-// 	if err != nil {
-// 		return slack.EphemeralMessage{Msg: "Could not find an inflight release for your app."}.Render()
-// 	}
+		storeStatus.Channels = append(storeStatus.Channels, channel)
+	}
 
-// 	phasedReleaseEnabled := "on"
+	return storeStatus.Render()
+}
 
-// 	if inflightRelease.PhasedRelease.Id == "" {
-// 		phasedReleaseEnabled = "off"
-// 	}
+func handleBetaGroupsCommand(user *types.User) types.SlackResponse {
+	betaGroups, err := getBetaGroups(userAppleCredentials(user))
+	if err != nil {
+		return slack.EphemeralMessage{Msg: "Could not find an app."}.Render()
+	}
 
-// 	return createSlackResponse("Inflight Release",
-// 		[]string{
-// 			fmt.Sprintf("Next up for release is *%s (%s)* with current status `%s`.",
-// 				inflightRelease.VersionName,
-// 				inflightRelease.BuildNumber,
-// 				inflightRelease.AppStoreState),
-// 			fmt.Sprintf("The release type is `%s` and phased release is turned *%s*.", inflightRelease.ReleaseType, phasedReleaseEnabled),
-// 			fmt.Sprintf("<https://appstoreconnect.apple.com/apps/%s/appstore/ios/version/inflight|App Store Connect>", appInfo.Id)})
-// }
+	groups := slack.BetaGroups{}
 
-// func handleLiveReleaseCommand(user *types.User) types.SlackResponse {
-// 	appInfo, err := getAppMetadata(userAppleCredentials(user))
-// 	if err != nil {
-// 		return slack.EphemeralMessage{Msg: "Could not find your app"}.Render()
-// 	}
-// 	liveRelease, err := getLiveRelease(userAppleCredentials(user))
-// 	if err != nil {
-// 		return slack.EphemeralMessage{Msg: "Could not find a live release for your app."}.Render()
-// 	}
+	for _, betaGroup := range betaGroups {
+		group := struct {
+			Name        string `json:"name"`
+			Internal    bool   `json:"internal"`
+			TesterCount int    `json:"testers"`
+		}{
+			Name:        betaGroup.Name,
+			Internal:    betaGroup.Internal,
+			TesterCount: len(betaGroup.Testers),
+		}
 
-// 	return createSlackResponse("Live Release",
-// 		[]string{
-// 			fmt.Sprintf("*%s (%s)* is on day *%d* of phased release with status `%s`.",
-// 				liveRelease.VersionName,
-// 				liveRelease.BuildNumber,
-// 				liveRelease.PhasedRelease.CurrentDayNumber,
-// 				liveRelease.PhasedRelease.PhasedReleaseState),
-// 			fmt.Sprintf("<https://appstoreconnect.apple.com/apps/%s/appstore/ios/version/deliverable|App Store Connect>", appInfo.Id)})
-// }
+		groups.Groups = append(groups.Groups, group)
+	}
 
-// func handlePauseReleaseCommand(user *types.User) types.SlackResponse {
-// 	appInfo, err := getAppMetadata(userAppleCredentials(user))
-// 	if err != nil {
-// 		return slack.EphemeralMessage{Msg: "Could not find your app"}.Render()
-// 	}
-// 	liveRelease, err := pauseLiveRelease(userAppleCredentials(user))
-// 	if err != nil {
-// 		return slack.EphemeralMessage{Msg: "Could not find an live release to pause."}.Render()
-// 	}
+	return groups.Render()
+}
 
-// 	return createSlackResponse("Live Release",
-// 		[]string{
-// 			fmt.Sprintf("*%s (%s)* is on day *%d* of phased release with status `%s`.",
-// 				liveRelease.VersionName,
-// 				liveRelease.BuildNumber,
-// 				liveRelease.PhasedRelease.CurrentDayNumber,
-// 				liveRelease.PhasedRelease.PhasedReleaseState),
-// 			fmt.Sprintf("<https://appstoreconnect.apple.com/apps/%s/appstore/ios/version/deliverable|App Store Connect>", appInfo.Id)})
-// }
+func handleInflightReleaseCommand(user *types.User) types.SlackResponse {
+	appInfo, err := getAppMetadata(userAppleCredentials(user))
+	if err != nil {
+		return slack.EphemeralMessage{Msg: "Could not find your app."}.Render()
+	}
 
-// func handleResumeReleaseCommand(user *types.User) types.SlackResponse {
-// 	appInfo, err := getAppMetadata(userAppleCredentials(user))
-// 	if err != nil {
-// 		return slack.EphemeralMessage{Msg: "Could not find your app"}.Render()
-// 	}
-// 	liveRelease, err := resumeLiveRelease(userAppleCredentials(user))
-// 	if err != nil {
-// 		return slack.EphemeralMessage{Msg: "Could not find an paused release to resume for your app."}.Render()
-// 	}
+	inflightRelease, err := getInflightRelease(userAppleCredentials(user))
+	if err != nil {
+		return slack.EphemeralMessage{Msg: "Could not find an inflight release for your app."}.Render()
+	}
 
-// 	return createSlackResponse("Live Release",
-// 		[]string{
-// 			fmt.Sprintf("*%s (%s)* is on day *%d* of phased release with status `%s`.",
-// 				liveRelease.VersionName,
-// 				liveRelease.BuildNumber,
-// 				liveRelease.PhasedRelease.CurrentDayNumber,
-// 				liveRelease.PhasedRelease.PhasedReleaseState),
-// 			fmt.Sprintf("<https://appstoreconnect.apple.com/apps/%s/appstore/ios/version/deliverable|App Store Connect>", appInfo.Id)})
-// }
+	phasedReleaseEnabled := true
 
-// func handleReleaseToAllCommand(user *types.User) types.SlackResponse {
-// 	appInfo, err := getAppMetadata(userAppleCredentials(user))
-// 	if err != nil {
-// 		return slack.EphemeralMessage{Msg: "Could not find your app"}.Render()
-// 	}
-// 	liveRelease, err := releaseToAll(userAppleCredentials(user))
-// 	if err != nil {
-// 		return slack.EphemeralMessage{Msg: "Could not find an live release to release to all for your app."}.Render()
-// 	}
+	if inflightRelease.PhasedRelease.Id == "" {
+		phasedReleaseEnabled = false
+	}
 
-// 	return createSlackResponse("Live Release",
-// 		[]string{
-// 			fmt.Sprintf("*%s (%s)* is on day *%d* of phased release with status `%s`.",
-// 				liveRelease.VersionName,
-// 				liveRelease.BuildNumber,
-// 				liveRelease.PhasedRelease.CurrentDayNumber,
-// 				liveRelease.PhasedRelease.PhasedReleaseState),
-// 			fmt.Sprintf("<https://appstoreconnect.apple.com/apps/%s/appstore/ios/version/deliverable|App Store Connect>", appInfo.Id)})
-// }
+	return slack.InflightRelease{
+		VersionString: inflightRelease.VersionName,
+		BuildNumber:   inflightRelease.BuildNumber,
+		StoreStatus:   inflightRelease.AppStoreState,
+		ReleaseType:   inflightRelease.ReleaseType,
+		PhasedRelease: phasedReleaseEnabled,
+		AppId:         appInfo.Id,
+	}.Render()
+}
 
-// func createSlackResponse(header string, messages []string) types.SlackResponse {
-// 	blocks := make([]types.SlackResponseText, len(messages)+1)
-// 	blocks[0] = types.SlackResponseText{
-// 		Type: "header",
-// 		Text: types.SlackResponseInsideText{Type: "plain_text", Text: header},
-// 	}
-// 	for i, message := range messages {
-// 		blocks[i+1] = types.SlackResponseText{
-// 			Type: "section",
-// 			Text: types.SlackResponseInsideText{Type: "mrkdwn", Text: message},
-// 		}
-// 	}
+func handlePauseReleaseCommand(user *types.User) types.SlackResponse {
+	appInfo, err := getAppMetadata(userAppleCredentials(user))
+	if err != nil {
+		return slack.EphemeralMessage{Msg: "Could not find your app."}.Render()
+	}
+	liveRelease, err := pauseLiveRelease(userAppleCredentials(user))
+	if err != nil {
+		return slack.EphemeralMessage{Msg: "Could not find a live release to pause."}.Render()
+	}
 
-// 	return types.SlackResponse{Blocks: blocks, ResponseType: "in_channel"}
-// }
+	return slack.LiveRelease{
+		AppId:               appInfo.Id,
+		Version:             liveRelease.VersionName,
+		BuildNumber:         liveRelease.BuildNumber,
+		PhasedReleaseStatus: liveRelease.PhasedRelease.CurrentDayNumber,
+		ReleaseStatus:       liveRelease.PhasedRelease.PhasedReleaseState,
+	}.Render()
+}
+
+func handleResumeReleaseCommand(user *types.User) types.SlackResponse {
+	appInfo, err := getAppMetadata(userAppleCredentials(user))
+	if err != nil {
+		return slack.EphemeralMessage{Msg: "Could not find your app."}.Render()
+	}
+	liveRelease, err := resumeLiveRelease(userAppleCredentials(user))
+	if err != nil {
+		return slack.EphemeralMessage{Msg: "Could not find a paused release to resume."}.Render()
+	}
+
+	return slack.LiveRelease{
+		AppId:               appInfo.Id,
+		Version:             liveRelease.VersionName,
+		BuildNumber:         liveRelease.BuildNumber,
+		PhasedReleaseStatus: liveRelease.PhasedRelease.CurrentDayNumber,
+		ReleaseStatus:       liveRelease.PhasedRelease.PhasedReleaseState,
+	}.Render()
+}
+
+func handleReleaseToAllCommand(user *types.User) types.SlackResponse {
+	appInfo, err := getAppMetadata(userAppleCredentials(user))
+	if err != nil {
+		return slack.EphemeralMessage{Msg: "Could not find your app."}.Render()
+	}
+	liveRelease, err := releaseToAll(userAppleCredentials(user))
+	if err != nil {
+		return slack.EphemeralMessage{Msg: "Could not find a live release."}.Render()
+	}
+
+	return slack.LiveRelease{
+		AppId:               appInfo.Id,
+		Version:             liveRelease.VersionName,
+		BuildNumber:         liveRelease.BuildNumber,
+		PhasedReleaseStatus: liveRelease.PhasedRelease.CurrentDayNumber,
+		ReleaseStatus:       liveRelease.PhasedRelease.PhasedReleaseState,
+	}.Render()
+}
 
 func sendResponseToSlack(requestURL string, slackResponse types.SlackResponse) error {
 	var body bytes.Buffer
@@ -251,8 +251,9 @@ func sendResponseToSlack(requestURL string, slackResponse types.SlackResponse) e
 	if err != nil {
 		fmt.Printf("slack: could not encode the response: %s\n", err)
 		return err
-
 	}
+
+	fmt.Println(body.String())
 
 	req, err := http.NewRequest(http.MethodPost, requestURL, &body)
 	if err != nil {
@@ -269,7 +270,7 @@ func sendResponseToSlack(requestURL string, slackResponse types.SlackResponse) e
 		return err
 	}
 
-	fmt.Printf("slack: response was delivered!")
+	fmt.Printf("slack: response was delivered to!")
 	return nil
 }
 

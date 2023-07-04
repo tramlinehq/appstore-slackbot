@@ -3,7 +3,12 @@ package slack
 import (
 	"ciderbot/types"
 	"fmt"
+	"strings"
+	"time"
 )
+
+const appStoreUrl string = "<https://appstoreconnect.apple.com/apps/%s/appstore/ios/version/deliverable|App Store Connect>"
+const appStoreIcon string = "https://storage.googleapis.com/tramline-public-assets/app-store.png"
 
 type SlackCommand interface {
 	Render() types.SlackResponse
@@ -24,13 +29,291 @@ type HelpText struct {
 	Commands map[string][2]string `json:"commands"`
 }
 
+type LiveRelease struct {
+	AppId               string `json:"app_id"`
+	Version             string `json:"version"`
+	BuildNumber         string `json:"build_number"`
+	PhasedReleaseStatus int    `json:"phased_release_status"`
+	ReleaseStatus       string `json:"release_status"`
+}
+
+type CurrentStoreStatus struct {
+	Channels []struct {
+		Name   string `json:"name"`
+		Builds []struct {
+			Id            string    `json:"id"`
+			BuildNumber   string    `json:"build_number"`
+			Status        string    `json:"status"`
+			VersionString string    `json:"version_string"`
+			ReleaseDate   time.Time `json:"release_date"`
+		} `json:"builds"`
+	}
+}
+
+type BetaGroups struct {
+	Groups []struct {
+		Name        string `json:"name"`
+		Internal    bool   `json:"internal"`
+		TesterCount int    `json:"testers"`
+	}
+}
+
+type InflightRelease struct {
+	VersionString string `json:"version_string"`
+	BuildNumber   string `json:"build_number"`
+	StoreStatus   string `json:"store_status"`
+	ReleaseType   string `json:"release_type"`
+	PhasedRelease bool   `json:"phased_release"`
+	AppId         string `json:"app_id"`
+}
+
+func (data InflightRelease) Render() types.SlackResponse {
+	phasedRelease := ""
+
+	if data.PhasedRelease {
+		phasedRelease = "on"
+	} else {
+		phasedRelease = "off"
+	}
+
+	line1 := fmt.Sprintf("The upcoming release in progress is %s (%s) with the current status of %s", data.VersionString, data, data.BuildNumber, data.StoreStatus)
+	line2 := fmt.Sprintf("The release type is %s and phased release is turned *%s*", data.ReleaseType, phasedRelease)
+
+	slackResponse := types.SlackResponse{
+		ResponseType: "in_channel",
+		Blocks: []types.Block{
+			{
+				Type: "header",
+				Text: &types.Text{
+					Type:  "plain_text",
+					Text:  ":airplane_departure: Inflight Release",
+					Emoji: true,
+				},
+			},
+			{
+				Type: "divider",
+			},
+			{
+				Type: "section",
+				Fields: []types.Text{
+					{
+						Type: "mrkdwn",
+						Text: line1,
+					},
+					{
+						Type: "mrkdwn",
+						Text: line2,
+					},
+				},
+			},
+			{
+				Type: "divider",
+			},
+			{
+				Type: "context",
+				Elements: []types.Element{
+					{
+						Type:     "image",
+						ImageURL: appStoreIcon,
+						AltText:  "app store connect",
+					},
+					{
+						Type: "mrkdwn",
+						Text: fmt.Sprintf(appStoreUrl, data.AppId),
+					},
+				},
+			},
+			{
+				Type: "divider",
+			},
+		},
+	}
+
+	return slackResponse
+}
+
+func (data BetaGroups) Render() types.SlackResponse {
+	var slackBlocks []types.Block
+
+	slackBlocks = append(slackBlocks, types.Block{
+		Type: "header",
+		Text: &types.Text{
+			Type:  "plain_text",
+			Text:  ":test_tube: Beta Groups",
+			Emoji: true,
+		},
+	})
+
+	slackBlocks = append(slackBlocks, types.Block{
+		Type: "divider",
+	})
+
+	for _, group := range data.Groups {
+		var groupType string
+		if group.Internal {
+			groupType = "*internal* group"
+		} else {
+			groupType = "*external* group"
+		}
+
+		text := fmt.Sprintf("❖ *%s* is an %s with %d tester", group.Name, groupType, group.TesterCount)
+		if group.TesterCount > 1 || group.TesterCount == 0 {
+			text += "s"
+		}
+
+		text += "."
+
+		slackBlocks = append(slackBlocks, types.Block{
+			Type: "section",
+			Text: &types.Text{
+				Type: "mrkdwn",
+				Text: text,
+			},
+		})
+	}
+
+	slackBlocks = append(slackBlocks, types.Block{
+		Type: "divider",
+	})
+
+	return types.SlackResponse{Blocks: slackBlocks, ResponseType: "in_channel"}
+}
+
+func (data CurrentStoreStatus) Render() types.SlackResponse {
+	slackBlocks := []types.Block{
+		{
+			Type: "header",
+			Text: &types.Text{
+				Type:  "plain_text",
+				Text:  ":convenience_store: Current Store Status",
+				Emoji: true,
+			},
+		},
+		{
+			Type: "divider",
+		},
+	}
+
+	for _, channel := range data.Channels {
+		slackBlocks = append(slackBlocks,
+			types.Block{
+				Type: "section",
+				Text: &types.Text{
+					Type: "mrkdwn",
+					Text: fmt.Sprintf("*%s*", strings.Title(channel.Name)),
+				},
+			},
+		)
+		for _, build := range channel.Builds {
+			slackBlocks = append(slackBlocks,
+				types.Block{
+					Type: "context",
+					Elements: []types.Element{
+						{
+							Type: "mrkdwn",
+							Text: fmt.Sprintf("*Build: %s*", build.BuildNumber),
+						},
+						{
+							Type:  "plain_text",
+							Text:  "•",
+							Emoji: true,
+						},
+						{
+							Type:  "plain_text",
+							Text:  build.Status,
+							Emoji: true,
+						},
+						{
+							Type:  "plain_text",
+							Text:  "•",
+							Emoji: true,
+						},
+						{
+							Type: "mrkdwn",
+							Text: build.ReleaseDate.Format("2006-01-02 15:04:05"),
+						},
+					},
+				},
+			)
+		}
+	}
+
+	slackBlocks = append(slackBlocks, types.Block{
+		Type: "divider",
+	})
+
+	return types.SlackResponse{Blocks: slackBlocks, ResponseType: "in_channel"}
+}
+
+func (data LiveRelease) Render() types.SlackResponse {
+	slackResponse := types.SlackResponse{
+		ResponseType: "in_channel",
+		Blocks: []types.Block{
+			{
+				Type: "header",
+				Text: &types.Text{
+					Type:  "plain_text",
+					Text:  ":iphone: Live Release",
+					Emoji: true,
+				},
+			},
+			{
+				Type: "divider",
+			},
+			{
+				Type: "section",
+				Fields: []types.Text{
+					{
+						Type: "mrkdwn",
+						Text: fmt.Sprintf("*Version:* %s :package:", data.Version),
+					},
+					{
+						Type: "mrkdwn",
+						Text: fmt.Sprintf("*Build Number:* %s :1234:", data.BuildNumber),
+					},
+					{
+						Type: "mrkdwn",
+						Text: fmt.Sprintf("*Current Release:* Day %d :rocket:", data.PhasedReleaseStatus),
+					},
+					{
+						Type: "mrkdwn",
+						Text: fmt.Sprintf("*Status:* %s", data.ReleaseStatus),
+					},
+				},
+			},
+			{
+				Type: "divider",
+			},
+			{
+				Type: "context",
+				Elements: []types.Element{
+					{
+						Type:     "image",
+						ImageURL: appStoreIcon,
+						AltText:  "app store connect",
+					},
+					{
+						Type: "mrkdwn",
+						Text: fmt.Sprintf(appStoreUrl, data.AppId),
+					},
+				},
+			},
+			{
+				Type: "divider",
+			},
+		},
+	}
+
+	return slackResponse
+}
+
 func (data EphemeralMessage) Render() types.SlackResponse {
 	slackResponse := types.SlackResponse{
 		ResponseType: "ephemeral",
 		Blocks: []types.Block{
 			{
 				Type: "section",
-				Text: types.Text{
+				Text: &types.Text{
 					Type: "mrkdwn",
 					Text: data.Msg,
 				},
@@ -46,10 +329,11 @@ func (data HelpText) Render() types.SlackResponse {
 		ResponseType: "in_channel",
 		Blocks: []types.Block{
 			{
-				Type: "section",
-				Text: types.Text{
-					Type: "mrkdwn",
-					Text: "*Usage Guide*",
+				Type: "header",
+				Text: &types.Text{
+					Type:  "plain_text",
+					Text:  ":books: Usage Guide",
+					Emoji: true,
 				},
 			},
 			{
@@ -61,14 +345,18 @@ func (data HelpText) Render() types.SlackResponse {
 	for name, desc := range data.Commands {
 		section := types.Block{
 			Type: "section",
-			Text: types.Text{
+			Text: &types.Text{
 				Type: "mrkdwn",
-				Text: fmt.Sprintf("%s *%s*\n%s", desc[0], name, desc[1]),
+				Text: fmt.Sprintf("%s `%s`\n%s", desc[0], name, desc[1]),
 			},
 		}
 
 		slackResponse.Blocks = append(slackResponse.Blocks, section)
 	}
+
+	slackResponse.Blocks = append(slackResponse.Blocks, types.Block{
+		Type: "divider",
+	})
 
 	return slackResponse
 }
@@ -78,10 +366,11 @@ func (data AppInfo) Render() types.SlackResponse {
 		ResponseType: "in_channel",
 		Blocks: []types.Block{
 			{
-				Type: "section",
-				Text: types.Text{
-					Type: "mrkdwn",
-					Text: ":information_source: *App Info*",
+				Type: "header",
+				Text: &types.Text{
+					Type:  "plain_text",
+					Text:  ":information_source: App Info",
+					Emoji: true,
 				},
 			},
 			{
@@ -107,6 +396,9 @@ func (data AppInfo) Render() types.SlackResponse {
 						Text: fmt.Sprintf("*ID:* %s :id:", data.Id),
 					},
 				},
+			},
+			{
+				Type: "divider",
 			},
 		},
 	}

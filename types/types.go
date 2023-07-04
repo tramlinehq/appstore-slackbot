@@ -123,14 +123,15 @@ type SlackResponse struct {
 
 type Block struct {
 	Type     string    `json:"type"`
-	Text     Text      `json:"text,omitempty"`
+	Text     *Text     `json:"text,omitempty"`
 	Fields   []Text    `json:"fields,omitempty"`
 	Elements []Element `json:"elements,omitempty"`
 }
 
 type Text struct {
-	Type string `json:"type"`
-	Text string `json:"text"`
+	Type  string `json:"type,omitempty"`
+	Text  string `json:"text,omitempty"`
+	Emoji bool   `json:"emoji,omitempty"`
 }
 
 type Element struct {
@@ -138,4 +139,5 @@ type Element struct {
 	ImageURL string `json:"image_url,omitempty"`
 	AltText  string `json:"alt_text,omitempty"`
 	Text     string `json:"text,omitempty"`
+	Emoji    bool   `json:"emoji,omitempty"`
 }
