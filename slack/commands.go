@@ -7,7 +7,7 @@ import (
 	"time"
 )
 
-const appStoreUrl string = "<https://appstoreconnect.apple.com/apps/%s/appstore/ios/version/deliverable|App Store Connect>"
+const appStoreUrl string = "<https://appstoreconnect.apple.com/apps/%s/appstore|App Store Connect>"
 const appStoreIcon string = "https://storage.googleapis.com/tramline-public-assets/app-store.png"
 
 type SlackCommand interface {
@@ -76,8 +76,8 @@ func (data InflightRelease) Render() types.SlackResponse {
 		phasedRelease = "off"
 	}
 
-	line1 := fmt.Sprintf("The upcoming release in progress is %s (%s) with the current status of %s", data.VersionString, data, data.BuildNumber, data.StoreStatus)
-	line2 := fmt.Sprintf("The release type is %s and phased release is turned *%s*", data.ReleaseType, phasedRelease)
+	line1 := fmt.Sprintf("The upcoming release in progress is *%s (%s)* with the current status of `%s`.", data.VersionString, data.BuildNumber, data.StoreStatus)
+	line2 := fmt.Sprintf("The release type is `%s` and phased release is turned *%s*.", data.ReleaseType, phasedRelease)
 
 	slackResponse := types.SlackResponse{
 		ResponseType: "in_channel",
@@ -95,15 +95,16 @@ func (data InflightRelease) Render() types.SlackResponse {
 			},
 			{
 				Type: "section",
-				Fields: []types.Text{
-					{
-						Type: "mrkdwn",
-						Text: line1,
-					},
-					{
-						Type: "mrkdwn",
-						Text: line2,
-					},
+				Text: &types.Text{
+					Type: "mrkdwn",
+					Text: line1,
+				},
+			},
+			{
+				Type: "section",
+				Text: &types.Text{
+					Type: "mrkdwn",
+					Text: line2,
 				},
 			},
 			{
@@ -211,26 +212,7 @@ func (data CurrentStoreStatus) Render() types.SlackResponse {
 					Elements: []types.Element{
 						{
 							Type: "mrkdwn",
-							Text: fmt.Sprintf("*Build: %s*", build.BuildNumber),
-						},
-						{
-							Type:  "plain_text",
-							Text:  "•",
-							Emoji: true,
-						},
-						{
-							Type:  "plain_text",
-							Text:  build.Status,
-							Emoji: true,
-						},
-						{
-							Type:  "plain_text",
-							Text:  "•",
-							Emoji: true,
-						},
-						{
-							Type: "mrkdwn",
-							Text: build.ReleaseDate.Format("2006-01-02 15:04:05"),
+							Text: fmt.Sprintf("*%s (%s)* was `%s` on *%s*", build.VersionString, build.BuildNumber, build.Status, build.ReleaseDate.Format("Monday, Jan 15th 15:04:05, 2006")),
 						},
 					},
 				},
@@ -246,6 +228,12 @@ func (data CurrentStoreStatus) Render() types.SlackResponse {
 }
 
 func (data LiveRelease) Render() types.SlackResponse {
+	line1 := fmt.Sprintf("We're on *day %d* of *phased release* with status `%s`.", data.PhasedReleaseStatus, data.ReleaseStatus)
+
+	if data.ReleaseStatus == "COMPLETE" {
+		line1 = fmt.Sprintf("The release was fully rolled out to *all users* after *day %d* of the *phased rollout*.", data.PhasedReleaseStatus)
+	}
+
 	slackResponse := types.SlackResponse{
 		ResponseType: "in_channel",
 		Blocks: []types.Block{
@@ -271,14 +259,13 @@ func (data LiveRelease) Render() types.SlackResponse {
 						Type: "mrkdwn",
 						Text: fmt.Sprintf("*Build Number:* %s :1234:", data.BuildNumber),
 					},
-					{
-						Type: "mrkdwn",
-						Text: fmt.Sprintf("*Current Release:* Day %d :rocket:", data.PhasedReleaseStatus),
-					},
-					{
-						Type: "mrkdwn",
-						Text: fmt.Sprintf("*Status:* %s", data.ReleaseStatus),
-					},
+				},
+			},
+			{
+				Type: "section",
+				Text: &types.Text{
+					Type: "mrkdwn",
+					Text: line1,
 				},
 			},
 			{
