@@ -12,11 +12,11 @@ import (
 )
 
 var ValidSlackCommands = map[string][2]string{
+	"help":                {":eyes:", "Get the usage guide for App Store SlackBot"},
 	"app_info":            {":information_source:", "Get some basic information about your app to verify you are working with the correct app"},
+	"beta_groups":         {":test_tube:", "List all the beta groups present in TestFlight"},
 	"overall_status":      {":convenience_store:", "Get an overall store status for your app, what builds are distributed to which channels (TestFlight and AppStore)"},
 	"inflight_release":    {":airplane_departure:", "Get the current inflight release in the App Store"},
-	"help":                {":eyes:", "Get the usage guide for App Store SlackBot"},
-	"beta_groups":         {":test_tube:", "List all the beta groups present in TestFlight"},
 	"live_release":        {":iphone:", "Get the current live release in the App Store"},
 	"pause_live_release":  {":double_vertical_bar:", "Pause the phased release of the current live release in the App Store"},
 	"resume_live_release": {":arrow_forward:", "Resume the phased release of the current live release in the App Store"},
@@ -253,8 +253,6 @@ func sendResponseToSlack(requestURL string, slackResponse types.SlackResponse) e
 		return err
 	}
 
-	fmt.Println(body.String())
-
 	req, err := http.NewRequest(http.MethodPost, requestURL, &body)
 	if err != nil {
 		fmt.Printf("slack: could not create request: %s\n", err)
@@ -270,7 +268,7 @@ func sendResponseToSlack(requestURL string, slackResponse types.SlackResponse) e
 		return err
 	}
 
-	fmt.Printf("slack: response was delivered to!")
+	fmt.Printf("slack: response was delivered!")
 	return nil
 }
 
