@@ -144,7 +144,7 @@ func initServer(db *gorm.DB) {
 	r.POST("/slack/listen", handleSlackCommands())
 
 	r.Static("/assets", "./assets")
-	r.LoadHTMLGlob("templates/html/*")
+	r.LoadHTMLGlob("views/*")
 
 	var err error
 	if appEnv == "production" {
