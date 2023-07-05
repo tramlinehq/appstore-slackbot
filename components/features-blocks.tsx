@@ -10,52 +10,48 @@ export default function FeaturesBlocks() {
                     <h2 className="h2 mb-4">Questions?</h2>
                 </div>
 
-                <div className="max-w-7xl mx-auto px-4 pt-16 sm:px-6 lg:px-8">
+                <div className="max-w-8xl mx-auto px-4 pt-16 sm:px-6 lg:px-8">
                     <dl className="space-y-10 md:space-y-10 md:grid md:grid-cols-2 md:grid-rows-2 md:gap-x-8">
                         <div>
-                            <dt className="text-xl leading-6 font-semibold text-white">What kind of data do you store?
-                            </dt>
-                            <dd className="text-lg mt-2 text-base text-indigo-200">
+                            <dt className="text-2xl leading-6 font-semibold text-white">How does this bot work?</dt>
+                            <dd className="text-xl mt-2 text-base text-indigo-200">This bot is a thin wrapper over <a
+                                className="underline text-white"
+                                href="https://github.com/ianmitchell/sentrydiscord.dev">Applelink</a> - a stateless App Store API service built for Tramline. App Store Slackbot is open-sourced under the MIT license.
+                            </dd>
+                        </div>
+
+                        <div>
+                            <dt className="text-2xl leading-6 font-semibold text-white">What data do you store?</dt>
+                            <dd className="text-xl mt-2 text-base text-indigo-200">
                                 <p>
                                     We only store encrypted App Store & Slack authorization credentials. We do not
-                                    store any requests that you make
-                                </p>
-                                <p className="mt-4">Embeds that fail to
-                                    send are logged for
-                                    24 hours to assist with debugging - this data is only used for fixing bugs and
-                                    is
-                                    not otherwise
-                                    viewed.
+                                    log or store any requests that you make through Slack. You can wipe all your credentials and data from the portal whenever you like.
                                 </p>
                             </dd>
                         </div>
                         <div>
-                            <dt className="text-xl leading-6 font-semibold text-white">Want a native integration?</dt>
-                            <dd className="text-lg mt-2 text-base text-indigo-200">Me too! There's an <a
-                                className="underline text-white"
-                                href="https://github.com/getsentry/sentry/issues/10925">open
-                                issue on GitHub</a> that you can go and leave reactions on to help get it
-                                prioritized. If official
-                                support lands, this service will likely stop allowing new registrations but will
-                                remain up so long
-                                as webhooks are receiving events.
-                            </dd>
-                        </div>
-                        <div>
-                            <dt className="text-xl leading-6 font-semibold text-white">Why doesn't the embed include
-                                [thing]?
-                            </dt>
-                            <dd className="text-lg mt-2 text-base text-indigo-200">I've tried to add what I view as useful
+                            <dt className="text-2xl leading-6 font-semibold text-white">What all can this bot do?</dt>
+                            <dd className="text-xl mt-2 text-base text-indigo-200">I've tried to add what I view as useful
                                 information,
                                 but if you think I've missed something please open an issue on GitHub!
                             </dd>
                         </div>
                         <div>
-                            <dt className="text-xl leading-6 font-semibold text-white">Have a feature request or want
-                                to report a
-                                bug?
-                            </dt>
-                            <dd className="text-lg mt-2 text-base text-indigo-200">Awesome! You can file an issue on the <a
+                            <dt className="text-2xl leading-6 font-semibold text-white">Is Google Play Store supported as well?</dt>
+                            <dd className="text-xl mt-2 text-base text-indigo-200">Not yet! If this is something that you'd like, please upvote this issue on GitHub and we'll prioritize if there's enough interest.
+                            </dd>
+                        </div>
+                        <div>
+                            <dt className="text-2xl leading-6 font-semibold text-white">What kind of access does this bot need?</dt>
+                            <dd className="text-xl mt-2 text-base text-indigo-200">
+                                <p>
+                                    It needs to authorize the Slack app with your Slack workspace and it requires configuring App Store Connect API keys from your Developer Account.
+                                </p>
+                            </dd>
+                        </div>
+                        <div>
+                            <dt className="text-2xl leading-6 font-semibold text-white">Have a command that doesn't exist?</dt>
+                            <dd className="text-xl mt-2 text-base text-indigo-200">Awesome! You can file an issue on the <a
                                 className="underline text-white"
                                 href="https://github.com/ianmitchell/sentrydiscord.dev">GitHub
                                 repository</a></dd>
