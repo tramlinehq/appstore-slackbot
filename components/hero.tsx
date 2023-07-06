@@ -12,8 +12,8 @@ export default function Hero() {
                             <span className="pl-4 pr-4 bg-clip-text text-transparent bg-gradient-to-r from-[#0043b6] to-[#4A154B]">→</span>
                             <span className="text-[#4A154B]">Slackbot</span>
                         </h1>
-                        <div className="max-w-3xl mx-auto">
-                            <p className="max-w-md mx-auto text-base text-black sm:text-lg md:my-8 md:text-2xl md:max-w-3xl drop-shadow-sm" data-aos="zoom-y-out" data-aos-delay="50">
+                        <div className="max-w-3xl space-y-5 mx-auto">
+                            <p className="max-w-md mt-5 mx-auto text-base text-black sm:text-lg md:my-8 md:text-2xl md:max-w-3xl drop-shadow-sm" data-aos="zoom-y-out" data-aos-delay="50">
                                 Talk to the App Store directly from your Slack workspace
                             </p>
                             <div className="max-w-xs mx-auto sm:max-w-none sm:flex sm:justify-center"

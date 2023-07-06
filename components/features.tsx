@@ -13,16 +13,8 @@ export default function Features() {
 
     const tabs = useRef<HTMLDivElement>(null)
 
-    const heightFix = () => {
-        if (tabs.current && tabs.current.parentElement) tabs.current.parentElement.style.height = `${tabs.current.clientHeight + 84}px`
-    }
-
-    useEffect(() => {
-        heightFix()
-    }, [])
-
     return (
-        <section className="relative inset-0 slack-purple pointer-events-none pb-24">
+        <section className="relative inset-0 slack-purple pointer-events-none">
             {/* Section background (needs .relative class on parent and next sibling elements) */}
             <div className="relative max-w-6xl mx-auto px-4 sm:px-6 py-16">
                 {/* Section header */}

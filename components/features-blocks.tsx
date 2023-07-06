@@ -11,8 +11,8 @@ export default function FeaturesBlocks() {
                 </div>
 
                 <div className="max-w-8xl mx-auto px-4 pt-16 sm:px-6 lg:px-8">
-                    <dl className="gap-y-10 md:gap-y-10 md:grid md:grid-cols-2 md:grid-rows-2 md:gap-x-8">
-                        <div>
+                    <dl className="space-y-10 md:gap-y-10 md:grid md:grid-cols-2 md:grid-rows-2 md:gap-x-8">
+                        <div className="mt-10">
                             <dt className="text-2xl leading-6 font-semibold text-white">How does this bot work?</dt>
                             <dd className="text-xl mt-2 text-base text-indigo-200">
                                 <p>
