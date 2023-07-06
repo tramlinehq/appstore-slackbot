@@ -20,7 +20,7 @@ export default function Hero() {
                                  data-aos="zoom-y-out" data-aos-delay="100">
                                 <div className="drop-shadow-lg">
                                     <a className="btn text-white bg-[#4A154B] opacity-90 hover:opacity-100 w-full mb-4 sm:w-auto sm:mb-0 font-bold"
-                                       href="https://ciderbot.onrender.com">Get Started</a>
+                                       href="https://service.appstoreslackbot.com/">Get Started</a>
                                 </div>
                                 <div className="drop-shadow-lg">
                                     <a className="btn text-white bg-gray-900 hover:bg-gray-800 w-full sm:w-auto sm:ml-4 font-bold"

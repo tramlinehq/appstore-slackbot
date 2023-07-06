@@ -3,7 +3,9 @@
 import {useState, useRef, useEffect} from 'react'
 import {Transition} from '@headlessui/react'
 import Image from 'next/image'
-import FeaturesBg from '@/public/images/features-bg.png'
+import Help from '@/public/images/help.png'
+import ControlRelease from '@/public/images/control_release.png'
+import StoreInfo from '@/public/images/store_info.png'
 
 export default function Features() {
 
@@ -34,10 +36,8 @@ export default function Features() {
                     <div className="max-w-xl md:max-w-none md:w-full mx-auto md:col-span-7 lg:col-span-6 md:mt-6"
                          data-aos="fade-right">
                         <div className="md:pr-4 lg:pr-12 xl:pr-16 mb-8 text-white">
-                            <h3 className="h3 mb-3">Powerful suite of tools</h3>
-                            <p className="text-xl">Duis aute irure dolor in reprehenderit in voluptate velit esse
-                                cillum dolore pariatur. Excepteur sint occaecat cupidatat non proident, sunt in
-                                culpa.</p>
+                            <h3 className="h3 mb-3">Power of the sun in the palm of your hands</h3>
+                            <p className="text-xl">With great power comes great responsibility.</p>
                         </div>
                         {/* Tabs buttons */}
                         <div className="mb-8 md:mb-0">
@@ -50,11 +50,9 @@ export default function Features() {
                                 }}
                             >
                                 <div>
-                                    <div className="font-bold leading-snug tracking-tight mb-1">Building the Simple
-                                        ecosystem
+                                    <div className="font-bold leading-snug tracking-tight mb-1">Your wish is our command
                                     </div>
-                                    <div className="text-gray-600">Take collaboration to the next level with
-                                        security and administrative features built for teams.
+                                    <div className="text-gray-600">List all the commands you can run from your Slack channel
                                     </div>
                                 </div>
                                 <div
@@ -75,11 +73,9 @@ export default function Features() {
                                 }}
                             >
                                 <div>
-                                    <div className="font-bold leading-snug tracking-tight mb-1">Building the Simple
-                                        ecosystem
+                                    <div className="font-bold leading-snug tracking-tight mb-1">Control your current release
                                     </div>
-                                    <div className="text-gray-600">Take collaboration to the next level with
-                                        security and administrative features built for teams.
+                                    <div className="text-gray-600">View your live release status, pause the phased release, resume it or release to all users
                                     </div>
                                 </div>
                                 <div
@@ -101,11 +97,9 @@ export default function Features() {
                                 }}
                             >
                                 <div>
-                                    <div className="font-bold leading-snug tracking-tight mb-1">Building the Simple
-                                        ecosystem
+                                    <div className="font-bold leading-snug tracking-tight mb-1">More complex commands coming soon
                                     </div>
-                                    <div className="text-gray-600">Take collaboration to the next level with
-                                        security and administrative features built for teams.
+                                    <div className="text-gray-600">Very soon you can prepare a new release and even submit it for review using appstoreslackbot
                                     </div>
                                 </div>
                                 <div
@@ -139,7 +133,7 @@ export default function Features() {
                                 leaveTo="opacity-0 -translate-y-16"
                             >
                                 <div className="relative inline-flex flex-col">
-                                    <Image className="md:max-w-none mx-auto rounded transform animate-float" src={FeaturesBg} width={500}
+                                    <Image className="md:max-w-none mx-auto rounded transform" src={Help} width={550}
                                            height="462" alt="Features bg"/>
                                 </div>
                             </Transition>
@@ -156,7 +150,7 @@ export default function Features() {
                                 leaveTo="opacity-0 -translate-y-16"
                             >
                                 <div className="relative inline-flex flex-col">
-                                    <Image className="md:max-w-none mx-auto rounded transform animate-float" src={FeaturesBg} width={500}
+                                    <Image className="md:max-w-none mx-auto rounded transform" src={ControlRelease} width={550}
                                            height="462" alt="Features bg"/>
                                 </div>
                             </Transition>
@@ -173,7 +167,7 @@ export default function Features() {
                                 leaveTo="opacity-0 -translate-y-16"
                             >
                                 <div className="relative inline-flex flex-col">
-                                    <Image className="md:max-w-none mx-auto rounded transform animate-float" src={FeaturesBg} width={500}
+                                    <Image className="md:max-w-none mx-auto rounded transform" src={StoreInfo} width={550}
                                            height="462" alt="Features bg"/>
                                 </div>
                             </Transition>
