@@ -1,92 +1,166 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/holiday.css@0.11.0" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  </head>
-  <body>
-    <nav>
-      <ul>
-        <li>
-          <img src="/assets/apple-on-slack.png" width="50"/>
-        </li>
-        <li>
-          <a href="/logout">logout</a>
-        </li>
-      </ul>
-    </nav>
 
-    <header>
-      <h1>App Store Slackbot</h1>
-      <img src="{{ .user.AvatarURL.String }}" />
-      <p>hi, {{ .user.Name.String }}</p>
-    </header>
+<head>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/picnic">
+  <link rel="stylesheet" href="/assets/style.css">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
 
-    <main>
-      <hr/>
+<body>
+  <nav>
+    <div class="brand">
+      <img class="logo" src="/assets/apple-on-slack.png" />
+      <a href="/" class=""><span>App Store Slackbot</span></a>
+    </div>
+    <div class="menu">
+      <a href="/logout">logout</a>
+    </div>
+  </nav>
 
-      <article>
-        {{ if .user.SlackAccessToken.Valid }}
-        <p>✅ Slack is connected!</p>
-        {{ else }}
-        <a href="/auth/slack/start">
-          <img alt="Add to Slack" height="40" width="139" src="https://platform.slack-edge.com/img/add_to_slack.png" srcSet="https://platform.slack-edge.com/img/add_to_slack.png 1x, https://platform.slack-edge.com/img/add_to_slack@2x.png 2x" />
-        </a>
-        {{ end }}
-      </article>
-
-      {{ if .user.SlackAccessToken.Valid }}
-      {{ if .user.AppStoreConnected }}
-      <p>✅ App Store is connected!</p>
-      <article>
-        <p>Start using ciderbot in your Slack now!</p>
-        <p>Example usage: <code>/applelink app_info</code></p>
-        <p>Run <code>/applelink help</code> to see more commands.</p>
-      </article>
-      {{ else }}
-      <article>
-        <h3>Add your ASC details</h3>
-        <form action="/auth/apple" method="POST" enctype="multipart/form-data">
-          <label for="bundle-id">
-            Bundle ID
-            <input type="text" name="bundle-id" id="bundle-id">
-          </label>
-
-          <label for="issuer-id">
-            Issuer ID
-            <input type="text" name="issuer-id" id="issuer-id">
-          </label>
-
-          <label for="key-id">
-            Key ID
-            <input type="text" name="key-id" id="key-id">
-          </label>
-
-          <label for="p8-file">
-            P8 File
-            <input type="file" name="p8-file" id="p8-file">
-          </label>
-
+  <main class="intro">
+    <section>
+      <div class="flex one two-800">
+        <article class="card">
+          <img class="pt-2 pl-2" src="{{ .user.AvatarURL.String }}" />
+          <section>Hello, <strong>{{ .user.Name.String }}</strong>!</section>
+          <section>
+            This is where you configure the integrations to Slack and App Store before using the Slackbot.
+          </section>
+          <section>If you haven't yet completed the integrations, you can do so from the wizard on the right →</section>
+          <section>
+            Once you are done configuring, you don't really need to come back to this page.
+          </section>
+          <section>However, you can return here if you wish to permanently delete your account data.</section>
           <footer>
-            <button type="submit">Save</button>
+            <form action="/user/delete" method="POST"
+              onsubmit="return confirm('Do you really want to remove your account?');">
+              <button class="error" type="submit">Delete data and remove account</button>
+            </form>
           </footer>
-        </form>
-      </article>
-      {{ end }}
-      {{ end }}
-    </main>
-    <footer>
-      <article>
-        <p>You can remove your data from our system anytime you want, we do not retain any data after your account is removed.</p>
-        <form action="/user/delete" method="POST" onsubmit="return confirm('Do you really want to remove your account?');">
-          <button type="submit">Delete data and remove account</button>
-        </form>
-      </article>
-      <p>
-        powered by <a href="https://www.tramline.app">Tramline</a>
-        •
-        <a href="https://github.com/tramlinehq/ciderbot">source</a>
-      </p>
-    </footer>
-  </body>
+        </article>
+
+        {{ if and (.user.SlackAccessToken.Valid) (.user.AppStoreConnected) }}
+        <div>
+          <div class="card" style="margin: 0 20px;">
+            <header>
+              <h3>Configured Integrations</h3>
+            </header>
+            <section>
+              <img class="inline mr-2" width="22" src="/assets/slack.png" />
+              <h4 class="inline">Slack</h4>
+              <span class="connected-pill inline">Connected</span>
+            </section>
+            <section>
+              <img class="inline mr-2" width="22" src="/assets/app-store.png" />
+              <h4 class="inline">App Store</h4>
+              <span class="connected-pill inline">Connected</span>
+            </section>
+            <footer>
+              <p class="mt-1">
+                On your desired slack channel run,
+              <pre>/appstoreslackbot help</pre>
+              To get a list of all the commands you can run.
+              </p>
+              <p class="mt-3"><strong>You're good to go!</strong></p>
+            </footer>
+          </div>
+        </div>
+        {{ else }}
+        <div class="tabs two" style="text-align: center;">
+          <input id="tabC-1" type="radio" name="tabgroupC" checked="">
+          <label class="pseudo button toggle" for="tabC-1">1</label> /
+          <input id="tabC-2" type="radio" name="tabgroupC">
+          <label class="pseudo button toggle" for="tabC-2">2</label>
+          <div class="row">
+            <div>
+              <div class="card" style="margin: 0 20px;">
+                <header>
+                  <img class="override-table-header-img" width="100%" src="/assets/slack.png" />
+                  <h3 class="inline">Connect to Slack</h3>
+                </header>
+                {{ if .user.SlackAccessToken.Valid }}
+                <section>
+                  <div class="connected-pill">Connected</div>
+                </section>
+                <section>
+                  Click <strong>Next</strong> to connect to the <strong>App Store</strong>.
+                </section>
+                {{ else }}
+                <section>
+                  Click the button below to connect to your Slack workspace.
+                </section>
+                <p><a class="button success" href="/auth/slack/start">Connect</a></p>
+                <section>
+                  You will be presented with the minimal permissions we need to post to your Slack channels.
+                </section>
+                <section>
+                  Once you're done connecting, click Next.
+                </section>
+                {{ end }}
+                <footer><label class="button" for="tabC-2">Next</label></footer>
+              </div>
+            </div>
+
+            <div>
+              <div class="card" style="margin: 0 20px;">
+                <header>
+                  <img class="override-table-header-img" width="100%" src="/assets/app-store.png" />
+                  <h3>Connect to App Store</h3>
+                </header>
+                {{ if .user.SlackAccessToken.Valid }}
+                {{ if .user.AppStoreConnected }}
+                <section>
+                  Connected!
+                </section>
+                {{ else }}
+                <form action="/auth/apple" method="POST" enctype="multipart/form-data">
+                  <section>
+                    First, enter your app's <strong>Bundle ID</strong>. This is the ID that looks like
+                    <code>com.tramline.ueno</code>.
+                    <input required class="mt-1" placeholder="Bundle ID" type="text" name="bundle-id" id="bundle-id">
+                  </section>
+                  <section>Then go to <code>Users and Access</code> on <a
+                      href="https://appstoreconnect.apple.com/access/api">App Store Connect</a>.</section>
+                  <section>Next, click on the <code>Keys</code> tab.</section>
+                  <section>Create a new API key and add the details in the form down below.</section>
+                  <section>
+                    <h5>Add your ASC details</h5>
+                    <input required class="stack" placeholder="Key ID" type="text" name="key-id" id="key-id">
+                    <input required class="stack" placeholder="Issuer ID" type="text" name="issuer-id" id="issuer-id">
+                    <input required class="stack" placeholder="P8 File" type="file" name="p8-file" id="p8-file">
+                    <button class="stack icon-paper-plane" type="submit">Save</button>
+                  </section>
+                </form>
+                {{ end }}
+                {{ else}}
+                <section>
+                  Please connect your Slack workspace before adding details of your <strong>App Store Connect</strong>
+                  account.
+                </section>
+                {{ end }}
+                <footer><label class="button dangerous" for="tabC-1">Back</label></footer>
+              </div>
+            </div>
+          </div>
+        </div>
+        {{ end }}
+    </section>
+  </main>
+
+  <footer class="footer">
+    <img width="60" src="/assets/tramline.png" />
+    <p>⚡️ <a href="https://www.tramline.app">Tramline</a> ⚡️</p>
+    <p>
+      <a href="https://appstoreslackbot.com">home</a>
+      •
+      <a href="https://github.com/tramlinehq/appstore-slackbot">source</a>
+      •
+      <a href="mailto:hello@tramline.app?subject=[via appstoreslackbot]">help</a>
+      •
+      <a href="https://discord.gg/u7VwyvBV2Z">discord</a>
+    </p>
+  </footer>
+</body>
+
 </html>
