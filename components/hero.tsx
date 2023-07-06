@@ -7,7 +7,7 @@ export default function Hero() {
                     {/* Section header */}
                     <div className="text-center pb-12 md:pb-16">
                         <span className="inline-flex items-center px-3 py-0.5 rounded-full text-sm font-medium bg-pink-100 text-pink-800 mb-4">Beta</span>
-                        <h1 className="text-6xl md:text-6xl font-extrabold leading-tighter tracking-tighter drop-shadow-sm" data-aos="zoom-y-out">
+                        <h1 className="text-2xl md:text-6xl font-extrabold leading-tighter tracking-tighter drop-shadow-sm" data-aos="zoom-y-out">
                             <span className="text-[#0043b6]">App Store</span>
                             <span className="pl-4 pr-4 bg-clip-text text-transparent bg-gradient-to-r from-[#0043b6] to-[#4A154B]">→</span>
                             <span className="text-[#4A154B]">Slackbot</span>

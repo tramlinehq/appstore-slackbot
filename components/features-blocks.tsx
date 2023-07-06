@@ -1,7 +1,7 @@
 export default function FeaturesBlocks() {
     return (
         <section
-            className="app-store-blue relative inset-0 top-1/2 md:mt-24 lg:mt-0 pointer-events-none text-white"
+            className="app-store-blue relative inset-0 top-1/2 md:mt-24 lg:mt-0 text-white"
             aria-hidden="true">
             <div className="relative max-w-6xl mx-auto px-4 sm:px-6 py-16">
                 <div
@@ -33,9 +33,7 @@ export default function FeaturesBlocks() {
                         </div>
                         <div>
                             <dt className="text-2xl leading-6 font-semibold text-white">What all can this bot do?</dt>
-                            <dd className="text-xl mt-2 text-base text-indigo-200">I've tried to add what I view as useful
-                                information,
-                                but if you think I've missed something please open an issue on GitHub!
+                            <dd className="text-xl mt-2 text-base text-indigo-200">We have added some practical commands that devs might use to keep track of their app releases. Run <code>/appstoreslackbot help</code> in your Slack channel to list them all.
                             </dd>
                         </div>
                         <div>
@@ -55,7 +53,7 @@ export default function FeaturesBlocks() {
                             <dt className="text-2xl leading-6 font-semibold text-white">Have a command that doesn't exist?</dt>
                             <dd className="text-xl mt-2 text-base text-indigo-200">Awesome! You can file an issue on the <a
                                 className="underline text-white"
-                                href="https://github.com/ianmitchell/sentrydiscord.dev">GitHub
+                                href="https://github.com/tramlinehq/appstore-slackbot">GitHub
                                 repository</a></dd>
                         </div>
                     </dl>

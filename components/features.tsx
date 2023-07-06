@@ -50,9 +50,9 @@ export default function Features() {
                                 }}
                             >
                                 <div>
-                                    <div className="font-bold leading-snug tracking-tight mb-1">Your wish is our command
+                                    <div className="font-bold leading-snug tracking-tight mb-1">Usage guide
                                     </div>
-                                    <div className="text-gray-600">List all the commands you can run from your Slack channel
+                                    <div className="text-gray-600">List all the possible commands that can be executed, from current review status to listing of test groups
                                     </div>
                                 </div>
                                 <div
@@ -97,9 +97,9 @@ export default function Features() {
                                 }}
                             >
                                 <div>
-                                    <div className="font-bold leading-snug tracking-tight mb-1">More complex commands coming soon
+                                    <div className="font-bold leading-snug tracking-tight mb-1">Coming soon
                                     </div>
-                                    <div className="text-gray-600">Very soon you can prepare a new release and even submit it for review using appstoreslackbot
+                                    <div className="text-gray-600">Prepare a new version for release, send it to testers, submit it for review and much more
                                     </div>
                                 </div>
                                 <div
