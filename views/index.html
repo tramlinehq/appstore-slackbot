@@ -50,19 +50,21 @@
               <img class="inline mr-2" width="22" src="/assets/slack.png" />
               <h4 class="inline">Slack</h4>
               <span class="connected-pill inline">Connected</span>
+              <div class="text-sm">{{ .user.SlackTeamName.String }} ({{ .user.SlackTeamID.String }})</div>
             </section>
             <section>
               <img class="inline mr-2" width="22" src="/assets/app-store.png" />
               <h4 class="inline">App Store</h4>
               <span class="connected-pill inline">Connected</span>
+              <div class="text-sm">{{ .user.AppStoreBundleID.String }} ({{.user.AppStoreKeyID.String}})</div>
             </section>
             <footer>
               <p class="mt-1">
-                On your desired slack channel run,
+                On your desired <strong>Slack</strong> channel run,
               <pre>/appstoreslackbot help</pre>
               To get a list of all the commands you can run.
               </p>
-              <p class="mt-3"><strong>You're good to go!</strong></p>
+              <p class="mt-3"><strong>You're all good to go!</strong></p>
             </footer>
           </div>
         </div>
@@ -81,6 +83,7 @@
                 </header>
                 {{ if .user.SlackAccessToken.Valid }}
                 <section>
+                  <p class="text-sm">{{ .user.SlackTeamName.String }} ({{ .user.SlackTeamID.String }})</p>
                   <div class="connected-pill">Connected</div>
                 </section>
                 <section>

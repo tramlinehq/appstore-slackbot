@@ -64,6 +64,11 @@
     vertical-align: inherit !important;
 }
 
+.text-sm {
+    font-size: 12px;
+    color: rgb(94, 107, 150);
+}
+
 html {
     font-family: sans-serif;
 }
