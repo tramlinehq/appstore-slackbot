@@ -16,7 +16,7 @@ export default function FeaturesBlocks() {
                             <dt className="text-2xl leading-6 font-semibold text-white">How does this bot work?</dt>
                             <dd className="text-xl mt-2 text-base text-indigo-200">
                                 <p>
-                                    This bot is a thin wrapper over <a className="underline text-white" href="https://github.com/tramlinehq/applelink">Applelink</a>
+                                    This bot is a thin wrapper over <a className="underline text-white" target="_blank" href="https://github.com/tramlinehq/applelink">Applelink</a>
                                 - a stateless App Store API service built for Tramline. App Store Slackbot is open-sourced under the MIT license.
                                 </p>
                             </dd>
@@ -51,10 +51,8 @@ export default function FeaturesBlocks() {
                         </div>
                         <div>
                             <dt className="text-2xl leading-6 font-semibold text-white">Have a command that doesn't exist?</dt>
-                            <dd className="text-xl mt-2 text-base text-indigo-200">Awesome! You can file an issue on the <a
-                                className="underline text-white"
-                                href="https://github.com/tramlinehq/appstore-slackbot">GitHub
-                                repository</a></dd>
+                            <dd className="text-xl mt-2 text-base text-indigo-200">Awesome! You can file an issue on the <a className="underline text-white" target="_blank" href="https://github.com/tramlinehq/appstore-slackbot">GitHub repository</a>
+                            </dd>
                         </div>
                     </dl>
                 </div>

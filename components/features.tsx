@@ -28,7 +28,7 @@ export default function Features() {
                 {/* Section header */}
                 <div
                     className="max-w-3xl mx-auto text-center pb-12 md:pb-4 border-b-2 border-white border-opacity-70 pb-4 text-white">
-                    <h2 className="h2 mb-4">Examples?</h2>
+                    <h2 className="h2 mb-4">Examples</h2>
                 </div>
                 {/* Section content */}
                 <div className="md:grid md:grid-cols-12 md:gap-6 px-4 sm:px-6 lg:px-8 space-y-10 md:space-y-10 p-16">
