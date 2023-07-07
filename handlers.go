@@ -23,6 +23,8 @@ import (
 	"gorm.io/gorm/clause"
 )
 
+const LANDING_PAGE_URL = "https://appstoreslackbot.com"
+
 func handleAppStoreCreds() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		bundleID := c.PostForm("bundle-id")
@@ -211,7 +213,7 @@ func handleLogout() gin.HandlerFunc {
 		session.Save()
 
 		// Redirect back to the home page
-		c.Redirect(http.StatusFound, "/")
+		c.Redirect(http.StatusFound, LANDING_PAGE_URL)
 	}
 }
 
@@ -253,7 +255,7 @@ func handleDeleteUser() gin.HandlerFunc {
 		session.Delete(authorizedUserKey)
 		session.Save()
 
-		c.Redirect(http.StatusFound, "/")
+		c.Redirect(http.StatusFound, LANDING_PAGE_URL)
 	}
 }
 
