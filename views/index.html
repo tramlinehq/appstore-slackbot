@@ -15,15 +15,22 @@
     .mt-3 {margin-top: 1.5rem !important;}
     .mr-1 {margin-right: 0.5rem !important;}
 
+
+    .container {
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+
     .intro {
       max-width: 960px;
       width: 100%;
-      margin: 100px auto;
+      margin: 100px auto 20px auto;
     }
 
     .footer {
       text-align: center;
-      padding: 3rem 1.5rem;
+      padding: 0 1.5rem;
       font-size: 14px;
     }
 
@@ -65,7 +72,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 </head>
 
-<body>
+<body class="container">
   <nav>
     <div class="brand">
       <img class="logo" src="/assets/apple-on-slack.png" />
