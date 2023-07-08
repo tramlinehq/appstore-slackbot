@@ -127,16 +127,26 @@ func handleSlackAuthCallback() gin.HandlerFunc {
 
 func handleHome() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		// Check if the user is authorized
 		user, err := getUserFromSession(c)
 		if err != nil {
-			// If not, redirect to the login page
+			c.HTML(http.StatusOK, "login.html", gin.H{"user": user})
+		} else {
+			c.HTML(http.StatusOK, "index.html", gin.H{"user": user})
+		}
+
+	}
+}
+
+func handleLogin() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		_, err := getUserFromSession(c)
+		if err != nil {
 			authURL := googleOAuthConf.AuthCodeURL("state")
 			c.Redirect(http.StatusFound, authURL)
 			return
+		} else {
+			c.Redirect(http.StatusFound, "/")
 		}
-
-		c.HTML(http.StatusOK, "index.html", gin.H{"user": user})
 	}
 }
 

@@ -134,6 +134,7 @@ func initServer(db *gorm.DB) {
 	r.Use(sessions.Sessions(sessionName, store))
 
 	r.GET("/", handleHome())
+	r.GET("/login", handleLogin())
 	r.GET("/logout", handleLogout())
 	r.GET("/auth/google/callback", handleGoogleCallback(db))
 	r.GET("/auth/slack/start", handleSlackAuth())
