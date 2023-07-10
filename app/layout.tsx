@@ -26,7 +26,7 @@ export default function RootLayout({children,}: {
             <link rel="manifest" href="/site.webmanifest"/>
         </head>
         <body
-            className={`${urbanist.className} antialiased bg-white text-gray-900 tracking-tight cover-gradient`}>
+            className={`${urbanist.className} antialiased bg-white text-gray-900 cover-gradient`}>
         <div className="flex flex-col min-h-screen overflow-hidden supports-[overflow:clip]:overflow-clip">
             {children}
         </div>

@@ -14,7 +14,7 @@ export default function Features() {
     const tabs = useRef<HTMLDivElement>(null)
 
     return (
-        <section className="relative inset-0 slack-purple pointer-events-none">
+        <section className="relative inset-0 slack-purple">
             {/* Section background (needs .relative class on parent and next sibling elements) */}
             <div className="relative max-w-6xl mx-auto px-4 sm:px-6 py-16">
                 {/* Section header */}
@@ -23,13 +23,12 @@ export default function Features() {
                     <h2 className="h2 mb-4">Examples</h2>
                 </div>
                 {/* Section content */}
-                <div className="md:grid md:grid-cols-12 md:gap-6 px-4 sm:px-6 lg:px-8 space-y-10 md:space-y-10 p-16">
+                <div className="md:grid md:grid-cols-12 md:gap-6 px-4 sm:px-6 lg:px-8 space-y-10 md:space-y-10 py-16">
                     {/* Content */}
-                    <div className="max-w-xl md:max-w-none md:w-full mx-auto md:col-span-7 lg:col-span-6 md:mt-6"
+                    <div className="max-w-xl md:max-w-none md:w-full mx-auto md:col-span-5 lg:col-span-5 md:mt-6"
                          data-aos="fade-right">
-                        <div className="md:pr-4 lg:pr-12 xl:pr-16 mb-8 text-white">
-                            <h3 className="h3 mb-3">Power of the sun in the palm of your hands</h3>
-                            <p className="text-xl">With great power comes great responsibility.</p>
+                        <div className="mb-8 text-white">
+                            <p className="text-xl"><a className="underline" href="https://service.appstoreslackbot.com/">Login</a> to connect your Slack workspace and add an App Store Connect API key to operate on your app right from your Slack channel.</p>
                         </div>
                         {/* Tabs buttons */}
                         <div className="mb-8 md:mb-0">
@@ -42,9 +41,9 @@ export default function Features() {
                                 }}
                             >
                                 <div>
-                                    <div className="font-bold leading-snug tracking-tight mb-1">Usage guide
+                                    <div className="font-bold leading-snug mb-1">Practical commands
                                     </div>
-                                    <div className="text-gray-600">List all the possible commands that can be executed, from current review status to listing of test groups
+                                    <div>List all the possible commands that can be executed, from current review status to listing of test groups
                                     </div>
                                 </div>
                                 <div
@@ -65,9 +64,9 @@ export default function Features() {
                                 }}
                             >
                                 <div>
-                                    <div className="font-bold leading-snug tracking-tight mb-1">Control your current release
+                                    <div className="font-bold leading-snug mb-1">Control your current release
                                     </div>
-                                    <div className="text-gray-600">View your live release status, pause the phased release, resume it or release to all users
+                                    <div>View your live release status, pause the phased release, resume it or release to all users
                                     </div>
                                 </div>
                                 <div
@@ -89,9 +88,9 @@ export default function Features() {
                                 }}
                             >
                                 <div>
-                                    <div className="font-bold leading-snug tracking-tight mb-1">Coming soon
+                                    <div className="font-bold leading-snug mb-1">Coming soon
                                     </div>
-                                    <div className="text-gray-600">Prepare a new version for release, send it to testers, submit it for review and much more
+                                    <div>Prepare a new version for release, send it to testers, submit it for review and much more
                                     </div>
                                 </div>
                                 <div
@@ -109,7 +108,7 @@ export default function Features() {
 
                     {/* Tabs items */}
                     <div
-                        className="max-w-xl md:max-w-none md:w-full mx-auto md:col-span-5 lg:col-span-6 mb-8 md:mb-0 md:order-1"
+                        className="max-w-xl md:max-w-none md:w-full mx-auto md:col-span-7 lg:col-span-7 mb-8 md:mb-0 md:order-1"
                         data-aos="zoom-y-out" ref={tabs}>
                         <div className="relative flex flex-col text-center lg:text-right">
                             {/* Item 1 */}
@@ -125,8 +124,7 @@ export default function Features() {
                                 leaveTo="opacity-0 -translate-y-16"
                             >
                                 <div className="relative inline-flex flex-col">
-                                    <Image className="md:max-w-none mx-auto rounded transform" src={Help} width={550}
-                                           height="462" alt="Features bg"/>
+                                    <Image className="md:max-w-none mx-auto rounded transform w-full" src={Help} alt="Usage guide"/>
                                 </div>
                             </Transition>
                             {/* Item 2 */}
@@ -142,8 +140,7 @@ export default function Features() {
                                 leaveTo="opacity-0 -translate-y-16"
                             >
                                 <div className="relative inline-flex flex-col">
-                                    <Image className="md:max-w-none mx-auto rounded transform" src={ControlRelease} width={550}
-                                           height="462" alt="Features bg"/>
+                                    <Image className="md:max-w-none mx-auto rounded transform w-full" src={ControlRelease} alt="Control Release"/>
                                 </div>
                             </Transition>
                             {/* Item 3 */}
@@ -159,8 +156,7 @@ export default function Features() {
                                 leaveTo="opacity-0 -translate-y-16"
                             >
                                 <div className="relative inline-flex flex-col">
-                                    <Image className="md:max-w-none mx-auto rounded transform" src={StoreInfo} width={550}
-                                           height="462" alt="Features bg"/>
+                                    <Image className="md:max-w-none mx-auto rounded transform w-full" src={StoreInfo} alt="Store Info"/>
                                 </div>
                             </Transition>
                         </div>
