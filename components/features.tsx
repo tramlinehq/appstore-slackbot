@@ -1,7 +1,7 @@
 'use client'
 
-import {useState, useRef, useEffect} from 'react'
-import {Transition} from '@headlessui/react'
+import { useState, useRef, useEffect } from 'react'
+import { Transition } from '@headlessui/react'
 import Image from 'next/image'
 import Help from '@/public/images/help.png'
 import ControlRelease from '@/public/images/control_release.png'
@@ -26,9 +26,9 @@ export default function Features() {
                 <div className="md:grid md:grid-cols-12 md:gap-6 px-4 sm:px-6 lg:px-8 space-y-10 md:space-y-10 py-16">
                     {/* Content */}
                     <div className="max-w-xl md:max-w-none md:w-full mx-auto md:col-span-5 lg:col-span-5 md:mt-6"
-                         data-aos="fade-right">
+                        data-aos="fade-right">
                         <div className="mb-8 text-white">
-                            <p className="text-xl"><a className="underline" href="https://service.appstoreslackbot.com/">Login</a> to connect your Slack workspace and add an App Store Connect API key to operate on your app right from your Slack channel.</p>
+                            <p className="text-xl"><a className="underline plausible-event-name=Get+started+Login" href="https://service.appstoreslackbot.com">Login</a> to connect your Slack workspace and add an App Store Connect API key to operate on your app right from your Slack channel.</p>
                         </div>
                         {/* Tabs buttons */}
                         <div className="mb-8 md:mb-0">
@@ -49,9 +49,9 @@ export default function Features() {
                                 <div
                                     className="flex justify-center items-center w-8 h-8 bg-white rounded-full shadow flex-shrink-0 ml-3">
                                     <svg className="w-3 h-3 fill-current" viewBox="0 0 12 12"
-                                         xmlns="http://www.w3.org/2000/svg">
+                                        xmlns="http://www.w3.org/2000/svg">
                                         <path
-                                            d="M11.953 4.29a.5.5 0 00-.454-.292H6.14L6.984.62A.5.5 0 006.12.173l-6 7a.5.5 0 00.379.825h5.359l-.844 3.38a.5.5 0 00.864.445l6-7a.5.5 0 00.075-.534z"/>
+                                            d="M11.953 4.29a.5.5 0 00-.454-.292H6.14L6.984.62A.5.5 0 006.12.173l-6 7a.5.5 0 00.379.825h5.359l-.844 3.38a.5.5 0 00.864.445l6-7a.5.5 0 00.075-.534z" />
                                     </svg>
                                 </div>
                             </a>
@@ -72,10 +72,10 @@ export default function Features() {
                                 <div
                                     className="flex justify-center items-center w-8 h-8 bg-white rounded-full shadow flex-shrink-0 ml-3">
                                     <svg className="w-3 h-3 fill-current" viewBox="0 0 12 12"
-                                         xmlns="http://www.w3.org/2000/svg">
+                                        xmlns="http://www.w3.org/2000/svg">
                                         <path
                                             d="M11.854.146a.5.5 0 00-.525-.116l-11 4a.5.5 0 00-.015.934l4.8 1.921 1.921 4.8A.5.5 0 007.5 12h.008a.5.5 0 00.462-.329l4-11a.5.5 0 00-.116-.525z"
-                                            fillRule="nonzero"/>
+                                            fillRule="nonzero" />
                                     </svg>
                                 </div>
                             </a>
@@ -96,10 +96,10 @@ export default function Features() {
                                 <div
                                     className="flex justify-center items-center w-8 h-8 bg-white rounded-full shadow flex-shrink-0 ml-3">
                                     <svg className="w-3 h-3 fill-current" viewBox="0 0 12 12"
-                                         xmlns="http://www.w3.org/2000/svg">
+                                        xmlns="http://www.w3.org/2000/svg">
                                         <path
                                             d="M11.334 8.06a.5.5 0 00-.421-.237 6.023 6.023 0 01-5.905-6c0-.41.042-.82.125-1.221a.5.5 0 00-.614-.586 6 6 0 106.832 8.529.5.5 0 00-.017-.485z"
-                                            fill="#191919" fillRule="nonzero"/>
+                                            fill="#191919" fillRule="nonzero" />
                                     </svg>
                                 </div>
                             </a>
@@ -124,7 +124,7 @@ export default function Features() {
                                 leaveTo="opacity-0 -translate-y-16"
                             >
                                 <div className="relative inline-flex flex-col">
-                                    <Image className="md:max-w-none mx-auto rounded transform w-full" src={Help} alt="Usage guide"/>
+                                    <Image className="md:max-w-none mx-auto rounded transform w-full" src={Help} alt="Usage guide" />
                                 </div>
                             </Transition>
                             {/* Item 2 */}
@@ -140,7 +140,7 @@ export default function Features() {
                                 leaveTo="opacity-0 -translate-y-16"
                             >
                                 <div className="relative inline-flex flex-col">
-                                    <Image className="md:max-w-none mx-auto rounded transform w-full" src={ControlRelease} alt="Control Release"/>
+                                    <Image className="md:max-w-none mx-auto rounded transform w-full" src={ControlRelease} alt="Control Release" />
                                 </div>
                             </Transition>
                             {/* Item 3 */}
@@ -156,7 +156,7 @@ export default function Features() {
                                 leaveTo="opacity-0 -translate-y-16"
                             >
                                 <div className="relative inline-flex flex-col">
-                                    <Image className="md:max-w-none mx-auto rounded transform w-full" src={StoreInfo} alt="Store Info"/>
+                                    <Image className="md:max-w-none mx-auto rounded transform w-full" src={StoreInfo} alt="Store Info" />
                                 </div>
                             </Transition>
                         </div>

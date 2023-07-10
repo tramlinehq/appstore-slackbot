@@ -19,8 +19,8 @@ export default function Hero() {
                             <div className="max-w-xs mx-auto sm:max-w-none sm:flex sm:justify-center"
                                  data-aos="zoom-y-out" data-aos-delay="100">
                                 <div className="drop-shadow-lg">
-                                    <a className="btn text-white bg-[#4A154B] opacity-90 hover:opacity-100 w-full mb-4 sm:w-auto sm:mb-0 font-bold"
-                                       href="https://service.appstoreslackbot.com/">Get Started</a>
+                                    <a className="btn text-white bg-[#4A154B] opacity-90 hover:opacity-100 w-full mb-4 sm:w-auto sm:mb-0 font-bold plausible-event-name=Get+started"
+                                       href="https://service.appstoreslackbot.com">Get Started</a>
                                 </div>
                                 <div className="drop-shadow-lg">
                                     <a className="btn text-white bg-gray-900 hover:bg-gray-800 w-full sm:w-auto sm:ml-4 font-bold"
