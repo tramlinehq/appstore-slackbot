@@ -24,6 +24,8 @@ import (
 )
 
 const LANDING_PAGE_URL = "https://appstoreslackbot.com"
+const APP_STORE_CONNECT_FAILURE = "Failed to connect to the App Store! Please try again."
+const SLACK_CONNECT_FAILURE = "Failed to authorize Slack! Please try again."
 
 func handleAppStoreCreds() gin.HandlerFunc {
 	return func(c *gin.Context) {
@@ -32,14 +34,14 @@ func handleAppStoreCreds() gin.HandlerFunc {
 		keyID := c.PostForm("key-id")
 		file, err := c.FormFile("p8-file")
 		if err != nil {
-			c.AbortWithError(http.StatusBadRequest, err)
+			redirectWithFlash(c, APP_STORE_CONNECT_FAILURE)
 			return
 		}
 
 		// Open the uploaded file
 		fileData, err := file.Open()
 		if err != nil {
-			c.AbortWithError(http.StatusInternalServerError, err)
+			redirectWithFlash(c, APP_STORE_CONNECT_FAILURE)
 			return
 		}
 		defer fileData.Close()
@@ -47,15 +49,15 @@ func handleAppStoreCreds() gin.HandlerFunc {
 		// Read the file data
 		p8FileBytes, err := io.ReadAll(fileData)
 		if err != nil {
-			c.AbortWithError(http.StatusInternalServerError, err)
+			redirectWithFlash(c, APP_STORE_CONNECT_FAILURE)
 			return
 		}
 
 		// Validate app store creds
 		err = validateAppStoreCreds(bundleID, issuerID, keyID, p8FileBytes)
 		if err != nil {
-			fmt.Printf("validation of apple credentials failed with : %s\n", err)
-			c.AbortWithError(http.StatusUnprocessableEntity, err)
+			fmt.Printf("Validation of apple credentials failed with : %s\n", err)
+			redirectWithFlash(c, APP_STORE_CONNECT_FAILURE)
 			return
 		}
 
@@ -98,16 +100,12 @@ func handleSlackAuth() gin.HandlerFunc {
 func handleSlackAuthCallback() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		code := c.Query("code")
-
 		userValue, _ := c.Get("user")
 		user, _ := userValue.(*types.User)
 
 		token, err := slackOAuthConf.Exchange(c, code)
 		if err != nil {
-			c.HTML(http.StatusOK, "index.html", gin.H{
-				"user": user,
-				"flashError": "Failed to authorize Slack",
-			})
+			redirectWithFlash(c, SLACK_CONNECT_FAILURE)
 			return
 		}
 
@@ -131,12 +129,15 @@ func handleSlackAuthCallback() gin.HandlerFunc {
 func handleHome() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		user, err := getUserFromSession(c)
+		session := sessions.Default(c)
+		flashMessages := session.Flashes()
+		session.Save()
+
 		if err != nil {
 			c.HTML(http.StatusOK, "login.html", gin.H{"user": user})
 		} else {
-			c.HTML(http.StatusOK, "index.html", gin.H{"user": user})
+			c.HTML(http.StatusOK, "index.html", gin.H{"user": user, "flashErrors": flashMessages})
 		}
-
 	}
 }
 
@@ -395,4 +396,12 @@ func validateAppStoreCreds(bundleID string, issuerID string, keyID string, p8Fil
 	appMetadata, err := getAppMetadata(&appleCredentials)
 	fmt.Println(appMetadata)
 	return err
+}
+
+func redirectWithFlash(c *gin.Context, flashMsg string) {
+	session := sessions.Default(c)
+	session.AddFlash(flashMsg)
+	session.Save()
+
+	c.Redirect(http.StatusFound, "/")
 }
