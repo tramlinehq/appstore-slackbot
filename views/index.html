@@ -30,7 +30,7 @@
 
     .footer {
       text-align: center;
-      padding: 0 1.5rem;
+      padding: 2rem 1.5rem;
       font-size: 14px;
     }
 
@@ -84,6 +84,19 @@
   </nav>
 
   <main class="intro">
+    {{ if (.flashError) }}
+    <section>
+      <div class="flex">
+        <input id="flash_error" type="checkbox" name="name">
+        <article class="card">
+          <header>
+            <div>{{.flashError}}</div>
+            <label for="flash_error" class="close">×
+          </label></header>
+        </article>
+      </div>
+    </section>
+    {{ end }}
     <section>
       <div class="flex one two-800">
         <article class="card">

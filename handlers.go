@@ -99,18 +99,21 @@ func handleSlackAuthCallback() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		code := c.Query("code")
 
+		userValue, _ := c.Get("user")
+		user, _ := userValue.(*types.User)
+
 		token, err := slackOAuthConf.Exchange(c, code)
 		if err != nil {
-			c.AbortWithError(http.StatusInternalServerError, err)
+			c.HTML(http.StatusOK, "index.html", gin.H{
+				"user": user,
+				"flashError": "Failed to authorize Slack",
+			})
 			return
 		}
 
 		team := token.Extra("team").(map[string]interface{})
 		slackTeamID := team["id"].(string)
 		slackTeamName := team["name"].(string)
-
-		userValue, _ := c.Get("user")
-		user, _ := userValue.(*types.User)
 		user.SlackAccessToken = sql.NullString{String: token.AccessToken, Valid: true}
 		user.SlackRefreshToken = sql.NullString{String: token.RefreshToken, Valid: true}
 		user.SlackTeamID = sql.NullString{String: slackTeamID, Valid: true}
