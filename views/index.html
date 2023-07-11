@@ -3,6 +3,21 @@
 
 <head>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/picnic">
+  <script>
+    document.addEventListener('DOMContentLoaded', function () {
+      const fileInput = document.getElementById('p8-file');
+      fileInput.addEventListener('change', function (e) {
+        if (fileInput.files.length > 0) {
+          const file = fileInput.files[0];
+          if (file.size > 10240) {
+            alert('The selected p8 file should be smaller than 10kb.');
+            fileInput.value = '';
+            e.preventDefault();
+          }
+        }
+      });
+    });
+  </script>
   <style>
     html {
       font-family: Arial, sans-serif;
@@ -232,7 +247,8 @@
                     <h5>Add your ASC details</h5>
                     <input required class="stack" placeholder="Key ID" type="text" name="key-id" id="key-id">
                     <input required class="stack" placeholder="Issuer ID" type="text" name="issuer-id" id="issuer-id">
-                    <input required class="stack" placeholder="P8 File" type="file" name="p8-file" id="p8-file">
+                    <input required class="stack" placeholder="P8 File" type="file" name="p8-file" id="p8-file"
+                      accept=".p8">
                     <button class="stack icon-paper-plane" type="submit">Save</button>
                   </section>
                 </form>
