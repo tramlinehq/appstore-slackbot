@@ -212,7 +212,7 @@ func (data CurrentStoreStatus) Render() types.SlackResponse {
 					Elements: []types.Element{
 						{
 							Type: "mrkdwn",
-							Text: fmt.Sprintf("*%s (%s)* was `%s` on *%s*", build.VersionString, build.BuildNumber, build.Status, build.ReleaseDate.Format("Monday, Jan 15th 15:04:05, 2006")),
+							Text: fmt.Sprintf("*%s (%s)* was `%s` on *%s*", build.VersionString, build.BuildNumber, build.Status, build.ReleaseDate.Format(time.RFC850)),
 						},
 					},
 				},
