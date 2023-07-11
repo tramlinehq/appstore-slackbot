@@ -232,6 +232,8 @@ func (data LiveRelease) Render() types.SlackResponse {
 
 	if data.ReleaseStatus == "COMPLETE" {
 		line1 = fmt.Sprintf("The release was fully rolled out to *all users* after *day %d* of the *phased rollout*.", data.PhasedReleaseStatus)
+	} else if data.ReleaseStatus == "" {
+		line1 = "The release was fully rolled out to *all users* without phased release."
 	}
 
 	slackResponse := types.SlackResponse{
