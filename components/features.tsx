@@ -43,7 +43,7 @@ export default function Features() {
                                 <div>
                                     <div className="font-bold leading-snug mb-1">Practical commands
                                     </div>
-                                    <div>List all the possible commands that can be executed, from current review status to listing of test groups
+                                    <div>Commands to check current review status, list test groups, see what build is distributed where, and so much more
                                     </div>
                                 </div>
                                 <div
@@ -88,9 +88,9 @@ export default function Features() {
                                 }}
                             >
                                 <div>
-                                    <div className="font-bold leading-snug mb-1">Coming soon
+                                    <div className="font-bold leading-snug mb-1">Current status
                                     </div>
-                                    <div>Prepare a new version for release, send it to testers, submit it for review and much more
+                                    <div>Check the overall status of your app across all beta channels and production
                                     </div>
                                 </div>
                                 <div

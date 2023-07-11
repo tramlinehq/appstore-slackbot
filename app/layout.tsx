@@ -18,6 +18,12 @@ export default function RootLayout({ children, }: {
     return (
         <html lang="en">
             <head>
+                <meta property="og:title" content="App Store Slackbot" />
+                <meta property="og:description" content="Talk to the App Store directly from your Slack workspace" />
+                <meta property="og:image" content="https://storage.googleapis.com/tramline-public-assets/appstoreslackbot.png" />
+                <meta name="twitter:title" content="App Store Slacbot" />
+                <meta name="twitter:description" content="Talk to the App Store directly from your Slack workspace" />
+                <meta name="twitter:image" content="https://storage.googleapis.com/tramline-public-assets/appstoreslackbot.png" />
                 <link rel="preconnect" href="https://stijndv.com" />
                 <link rel="stylesheet" href="https://stijndv.com/fonts/Eudoxus-Sans.css" />
                 <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />

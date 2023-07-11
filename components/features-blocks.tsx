@@ -33,25 +33,25 @@ export default function FeaturesBlocks() {
                         </div>
                         <div>
                             <dt className="text-2xl leading-6 font-semibold text-white">What all can this bot do?</dt>
-                            <dd className="text-xl mt-2 text-base text-indigo-200">We have added some practical commands that devs might use to keep track of their app releases. Run <code>/appstoreslackbot help</code> in your Slack channel to list them all.
+                            <dd className="text-xl mt-2 text-base text-indigo-200">We have added some practical commands that you could use to keep track of your app releases. Run <code>/appstoreslackbot help</code> in your Slack channel to list them all.
                             </dd>
                         </div>
                         <div>
                             <dt className="text-2xl leading-6 font-semibold text-white">Is Google Play Store supported as well?</dt>
-                            <dd className="text-xl mt-2 text-base text-indigo-200">Not yet! If this is something that you'd like, please upvote this issue on GitHub and we'll prioritize if there's enough interest.
+                            <dd className="text-xl mt-2 text-base text-indigo-200">Not yet! If this is something that you'd like, please react to <a className="underline text-white" target="_blank" href="https://github.com/tramlinehq/appstore-slackbot/issues/2">this issue on GitHub</a> and we'll prioritize if there's enough interest.
                             </dd>
                         </div>
                         <div>
                             <dt className="text-2xl leading-6 font-semibold text-white">What kind of access does this bot need?</dt>
                             <dd className="text-xl mt-2 text-base text-indigo-200">
                                 <p>
-                                    It needs to authorize the Slack app with your Slack workspace and it requires configuring App Store Connect API keys from your Developer Account.
+                                    It needs to authorize the Slack app with your Slack workspace and it requires configuring App Store Connect API key from your Developer Account.
                                 </p>
                             </dd>
                         </div>
                         <div>
                             <dt className="text-2xl leading-6 font-semibold text-white">Have a command that doesn't exist?</dt>
-                            <dd className="text-xl mt-2 text-base text-indigo-200">Awesome! You can file an issue on the <a className="underline text-white" target="_blank" href="https://github.com/tramlinehq/appstore-slackbot">GitHub repository</a>
+                            <dd className="text-xl mt-2 text-base text-indigo-200">Commands to prepare a new version for release, send it to testers, submit it for review, and add marketing materials to the release are coming soon. Need more? You can file an issue on the <a className="underline text-white" target="_blank" href="https://github.com/tramlinehq/appstore-slackbot">GitHub repository.</a>
                             </dd>
                         </div>
                     </dl>
