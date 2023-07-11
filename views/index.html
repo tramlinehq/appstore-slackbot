@@ -49,6 +49,10 @@
       margin-right: 0.5rem !important;
     }
 
+    .mb-1 {
+      margin-bottom: 0.5rem !important;
+    }
+
     .container {
       display: flex;
       flex-direction: column;
@@ -106,6 +110,10 @@
       font-style: italic;
       background-color: rgb(251 113 133/0.3);
       color: rgb(251 113 133/1)
+    }
+
+    .border-last {
+      border-bottom-width: 1px !important;
     }
   </style>
   <link rel="apple-touch-icon" sizes="180x180" href="assets/apple-touch-icon.png" />
@@ -248,11 +256,12 @@
                   <section>Then go to <code>Users and Access</code> on <a
                       href="https://appstoreconnect.apple.com/access/api">App Store Connect</a>.</section>
                   <section>Next, click on the <code>Keys</code> tab.</section>
-                  <section>Create a new API key and add the details in the form down below.</section>
+                  <section>Create a new API key and add the details along with the p8 file in the form down below.</section>
                   <section>
                     <h5>Add your ASC details</h5>
                     <input required class="stack" placeholder="Key ID" type="text" name="key-id" id="key-id">
-                    <input required class="stack" placeholder="Issuer ID" type="text" name="issuer-id" id="issuer-id">
+                    <input required class="stack border-last" placeholder="Issuer ID" type="text" name="issuer-id" id="issuer-id">
+                    <label for="p8-file"><h5>Upload the p8 file</h5></label>
                     <input required class="stack" placeholder="P8 File" type="file" name="p8-file" id="p8-file"
                       accept=".p8">
                     <button class="stack icon-paper-plane" type="submit">Save</button>
