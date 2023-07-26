@@ -40,7 +40,7 @@ export default function Features() {
                                     setTab(1);
                                 }}
                             >
-                                <div class="text-white leading-snug tracking-tight">
+                                <div className="text-white leading-snug tracking-tight">
                                     <div className="font-bold leading-snug mb-1">Practical commands
                                     </div>
                                     <div>Commands to check current review status, list test groups, see what build is distributed where, and so much more
@@ -63,7 +63,7 @@ export default function Features() {
                                     setTab(2);
                                 }}
                             >
-                                <div class="text-white leading-snug tracking-tight">
+                                <div className="text-white leading-snug tracking-tight">
                                     <div className="font-bold leading-snug mb-1">Control your current release
                                     </div>
                                     <div>View your live release status, pause the phased release, resume it or release to all users
@@ -87,7 +87,7 @@ export default function Features() {
                                     setTab(3);
                                 }}
                             >
-                                <div class="text-white leading-snug tracking-tight">
+                                <div className="text-white leading-snug tracking-tight">
                                     <div className="font-bold leading-snug mb-1">Current status
                                     </div>
                                     <div>Check the overall status of your app across all beta channels and production
