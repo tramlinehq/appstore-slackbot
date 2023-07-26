@@ -61,7 +61,7 @@ module.exports = {
       },
       fontFamily: {
         exodus: ['Eudoxus Sans', 'sans-serif'],
-        urbanist: ['Urbanist', 'sans-serif'],
+        inter: ['Inter', 'sans-serif'],
       },
       fontSize: {
         xs: '0.75rem',

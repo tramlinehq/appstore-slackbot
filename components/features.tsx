@@ -33,14 +33,14 @@ export default function Features() {
                         {/* Tabs buttons */}
                         <div className="mb-8 md:mb-0">
                             <a
-                                className={`flex items-center text-lg p-5 rounded border transition duration-300 ease-in-out mb-3 ${tab !== 1 ? 'bg-white shadow-md border-gray-200 hover:shadow-lg' : 'bg-gray-200 border-transparent'}`}
+                                className={`flex items-center text-lg p-5 bg-[#25262B] shadow-xs rounded border transition duration-300 ease-in-out mb-3 ${tab !== 1 ? 'hover:opacity-95 hover:shadow-lg border-transparent' : 'border-gray-200'}`}
                                 href="#0"
                                 onClick={(e) => {
                                     e.preventDefault();
                                     setTab(1);
                                 }}
                             >
-                                <div>
+                                <div class="text-white leading-snug tracking-tight">
                                     <div className="font-bold leading-snug mb-1">Practical commands
                                     </div>
                                     <div>Commands to check current review status, list test groups, see what build is distributed where, and so much more
@@ -56,14 +56,14 @@ export default function Features() {
                                 </div>
                             </a>
                             <a
-                                className={`flex items-center text-lg p-5 rounded border transition duration-300 ease-in-out mb-3 ${tab !== 2 ? 'bg-white shadow-md border-gray-200 hover:shadow-lg' : 'bg-gray-200 border-transparent'}`}
+                                className={`flex items-center text-lg p-5 bg-[#25262B] shadow-xs rounded border transition duration-300 ease-in-out mb-3 ${tab !== 2 ? 'hover:opacity-95 hover:shadow-lg border-transparent' : 'border-gray-200'}`}
                                 href="#0"
                                 onClick={(e) => {
                                     e.preventDefault();
                                     setTab(2);
                                 }}
                             >
-                                <div>
+                                <div class="text-white leading-snug tracking-tight">
                                     <div className="font-bold leading-snug mb-1">Control your current release
                                     </div>
                                     <div>View your live release status, pause the phased release, resume it or release to all users
@@ -80,14 +80,14 @@ export default function Features() {
                                 </div>
                             </a>
                             <a
-                                className={`flex items-center text-lg p-5 rounded border transition duration-300 ease-in-out mb-3 ${tab !== 3 ? 'bg-white shadow-md border-gray-200 hover:shadow-lg' : 'bg-gray-200 border-transparent'}`}
+                                className={`flex items-center text-lg p-5 bg-[#25262B] shadow-xs rounded border transition duration-300 ease-in-out mb-3 ${tab !== 3 ? 'hover:opacity-95 hover:shadow-lg border-transparent' : 'border-gray-200'}`}
                                 href="#0"
                                 onClick={(e) => {
                                     e.preventDefault();
                                     setTab(3);
                                 }}
                             >
-                                <div>
+                                <div class="text-white leading-snug tracking-tight">
                                     <div className="font-bold leading-snug mb-1">Current status
                                     </div>
                                     <div>Check the overall status of your app across all beta channels and production

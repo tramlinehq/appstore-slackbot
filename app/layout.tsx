@@ -1,11 +1,11 @@
 import './css/style.css'
 
-import { Urbanist } from 'next/font/google'
+import { Inter } from 'next/font/google'
 
-const urbanist = Urbanist({
-    subsets: ['latin'],
-    variable: '--font-urbanist',
-    display: 'swap',
+const inter = Inter({
+  subsets: ['latin'],
+  variable: '--font-inter',
+  display: 'swap'
 })
 export const metadata = {
     title: 'App Store → Slackbot',
@@ -33,7 +33,7 @@ export default function RootLayout({ children, }: {
                 <script defer data-domain="appstoreslackbot.com" src="https://plausible.io/js/script.tagged-events.js"></script>
             </head>
             <body
-                className={`${urbanist.className} antialiased bg-white text-gray-900 cover-gradient`}>
+                className={`${inter.className} font-inter antialiased bg-white text-gray-900 cover-gradient`}>
                 <div className="flex flex-col min-h-screen overflow-hidden supports-[overflow:clip]:overflow-clip">
                     {children}
                 </div>
