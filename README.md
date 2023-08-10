@@ -36,7 +36,7 @@ go run .
 ### Uses
 - [gin](https://github.com/gin-gonic/gin "gin")
 - [applelink](https://github.com/tramlinehq/applelink "applelink") 
-- [picniccss](https://picnicss.com/ "picnic-css") 
+- [picnicss](https://picnicss.com/ "picnic-css") 
 
 ### Infrastructure 
 Deployed on [render.com](https://render.com) 
